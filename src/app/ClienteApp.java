@@ -30,7 +30,7 @@ public class ClienteApp extends Application {
     	TestSQLite.createTable(); //Asegurar que la tabla 'clientes' existe
 
         // Configuración de campos de texto ll
-        txtNombre.setPromptText("Nombre Modificado 2");
+        txtNombre.setPromptText("Nombre Modificado 3");
         txtApellido.setPromptText("Apellido");
         txtDireccion.setPromptText("Dirección");
 
