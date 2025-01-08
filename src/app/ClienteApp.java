@@ -30,7 +30,7 @@ public class ClienteApp extends Application {
     	TestSQLite.createTable(); //Asegurar que la tabla 'clientes' existe
 
         // Configuración de campos de texto ll
-        txtNombre.setPromptText("modificado por ChatGPT PROBANDO SI LEE");
+        txtNombre.setPromptText("modificado por ChatGPT PROBANDO SI LEE 2");
         txtApellido.setPromptText("Apellido");
         txtDireccion.setPromptText("Dirección");
 
