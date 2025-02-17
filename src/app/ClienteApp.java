@@ -35,7 +35,6 @@ public class ClienteApp extends Application {
         txtDireccion.setPromptText("Dirección");
 
         // Botón para agregar cliente
-        //PROBANDO
         Button btnAgregar = new Button("Agregar");
         btnAgregar.setOnAction(e -> agregarCliente());
 
@@ -48,7 +47,6 @@ public class ClienteApp extends Application {
         configurarTabla();
 
         // Diseño de la interfaz
-        // Probando agregar esta linea
         HBox formulario = new HBox(10, txtNombre, txtApellido, txtDireccion, btnAgregar, btnListar);
         VBox root = new VBox(10, formulario, tableClientes);
         Scene scene = new Scene(root, 800, 400);
