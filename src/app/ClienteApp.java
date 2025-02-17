@@ -19,9 +19,10 @@ import db.TestSQLite;
 public class ClienteApp extends Application {
 
 	private final ObservableList<Cliente> clientes = FXCollections.observableArrayList();
-    private final TextField txtNombre = new TextField();
-    private final TextField txtApellido = new TextField();
-    private final TextField txtDireccion = new TextField();
+	private final TextField txtNombre = new TextField();
+	private final TextField txtApellido = new TextField();
+	private final TextField txtDireccion = new TextField();
+	private final DatePicker dpCumpleaños = new DatePicker(); // Campo para la fecha de cumpleaños
     private TableView<Cliente> tableClientes;
 
     @Override
@@ -29,6 +30,9 @@ public class ClienteApp extends Application {
     	
     	TestSQLite.createTable(); //Asegurar que la tabla 'clientes' existe
 
+        // Mostrar recordatorios al iniciar la app
+        mostrarRecordatorios();
+        
         // Configuración de campos de texto ll
         txtNombre.setPromptText("modificado por ChatGPT PROBANDO SI LEE 3 ");
         txtApellido.setPromptText("Apellido");
@@ -47,13 +51,60 @@ public class ClienteApp extends Application {
         configurarTabla();
 
         // Diseño de la interfaz
-        HBox formulario = new HBox(10, txtNombre, txtApellido, txtDireccion, btnAgregar, btnListar);
+        HBox formulario = new HBox(10, txtNombre, txtApellido, txtDireccion, dpCumpleaños, btnAgregar, btnListar);
         VBox root = new VBox(10, formulario, tableClientes);
         Scene scene = new Scene(root, 800, 400);
 
         primaryStage.setTitle("Gestión de Clientes");
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+    
+    private void mostrarRecordatorios() {
+        String recordatorios = obtenerRecordatorios();
+        if (recordatorios.isEmpty()) {
+            recordatorios = "Hoy no hay recordatorios.";
+        }
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Recordatorios del Día");
+        alert.setHeaderText(null);
+        alert.setContentText(recordatorios);
+        alert.showAndWait();
+    }
+    
+   
+    private String obtenerRecordatorios() {
+        StringBuilder recordatorios = new StringBuilder();
+        String sql = "SELECT nombre, apellido FROM clientes WHERE DATE(cumpleaños) = DATE('now')";
+        try (Connection conn = TestSQLite.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+            	String cumpleaños = rs.getString("cumpleaños");
+            	int edad = -1; // Valor por defecto para cuando no sabemos la edad
+
+            	if (cumpleaños != null && !cumpleaños.startsWith("2000")) { // Si no es la fecha por defecto
+            	    int añoNacimiento = Integer.parseInt(cumpleaños.substring(0, 4));
+            	    int añoActual = java.time.LocalDate.now().getYear();
+            	    edad = añoActual - añoNacimiento;
+            	}
+
+            	recordatorios.append("Hoy es el cumpleaños de ")
+            	        .append(rs.getString("nombre"))
+            	        .append(" ")
+            	        .append(rs.getString("apellido"));
+
+            	if (edad != -1) {
+            	    recordatorios.append(" (Cumple " + edad + " años)");
+            	}
+
+            	recordatorios.append("!\n");
+
+            }
+        } catch (SQLException e) {
+            System.out.println("Error obteniendo recordatorios: " + e.getMessage());
+        }
+        return recordatorios.toString();
     }
 
     private void configurarTabla() {
@@ -130,13 +181,22 @@ public class ClienteApp extends Application {
             return;
         }
 
-        String sql = "INSERT INTO clientes(nombre, apellido, direccion) VALUES(?, ?, ?)";
+        String sql = "INSERT INTO clientes(nombre, apellido, direccion, cumpleaños) VALUES(?, ?, ?, ?)";
+
 
         try (Connection conn = TestSQLite.connect(); // Reutilizamos la conexión de TestSQLite
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, nombre);
-            pstmt.setString(2, apellido);
-            pstmt.setString(3, direccion);
+        	pstmt.setString(1, nombre);
+        	pstmt.setString(2, apellido);
+        	pstmt.setString(3, direccion);
+
+        	// Si no se ingresa una fecha, usar un valor por defecto (Ejemplo: 1 de enero de 2000)
+        	if (dpCumpleaños.getValue() != null) {
+        	    pstmt.setString(4, dpCumpleaños.getValue().toString()); // Guardar la fecha seleccionada
+        	} else {
+        	    pstmt.setString(4, "2000-01-01"); // Fecha por defecto
+        	}
+
             pstmt.executeUpdate();
             txtNombre.clear();
             txtApellido.clear();

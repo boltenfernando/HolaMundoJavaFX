@@ -23,13 +23,14 @@ public class TestSQLite {
         }
     }
 
-    // Método para crear la tabla 'clientes'
+ // Método para crear la tabla 'clientes'
     public static void createTable() {
         String sql = "CREATE TABLE IF NOT EXISTS clientes ("
                    + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                    + "nombre TEXT NOT NULL, "
                    + "apellido TEXT NOT NULL, "
-                   + "direccion TEXT NOT NULL);";
+                   + "direccion TEXT NOT NULL, "
+                   + "cumpleaños DATE);"; // Agregamos la columna cumpleaños
 
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
@@ -39,6 +40,7 @@ public class TestSQLite {
             System.out.println("Error al crear la tabla: " + e.getMessage());
         }
     }
+
 
     // Método para limpiar la tabla (opcional, por si querés reiniciar datos)
     public static void clearTable() {
