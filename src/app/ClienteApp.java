@@ -133,8 +133,8 @@ public class ClienteApp extends Application {
         return recordatorios.toString();
     }
 
+    
     private void configurarTabla() {
-        // Columnas existentes
         TableColumn<Cliente, Integer> colId = new TableColumn<>("ID");
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
 
@@ -146,6 +146,10 @@ public class ClienteApp extends Application {
 
         TableColumn<Cliente, String> colDireccion = new TableColumn<>("Dirección");
         colDireccion.setCellValueFactory(new PropertyValueFactory<>("direccion"));
+
+        // Nueva columna: Cumpleaños
+        TableColumn<Cliente, String> colCumpleaños = new TableColumn<>("Cumpleaños");
+        colCumpleaños.setCellValueFactory(new PropertyValueFactory<>("cumpleaños"));
 
         // Columna de Modificar
         TableColumn<Cliente, Void> colModificar = new TableColumn<>("Modificar");
@@ -193,8 +197,9 @@ public class ClienteApp extends Application {
             }
         });
 
-        // Agregar todas las columnas a la tabla
-        tableClientes.getColumns().addAll(colId, colNombre, colApellido, colDireccion, colModificar, colEliminar);
+     // Agregar todas las columnas a la tabla
+        tableClientes.getColumns().addAll(colId, colNombre, colApellido, colDireccion, colCumpleaños, colModificar, colEliminar);
+
     }
 
     private void agregarCliente() {
