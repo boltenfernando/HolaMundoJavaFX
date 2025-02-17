@@ -36,8 +36,8 @@ public class ClienteApp extends Application {
 
         // Botón para agregar cliente
         //PROBANDO
-        //Button btnAgregar = new Button("Agregar");
-        //btnAgregar.setOnAction(e -> agregarCliente());
+        Button btnAgregar = new Button("Agregar");
+        btnAgregar.setOnAction(e -> agregarCliente());
 
         // Botón para listar clientes
         Button btnListar = new Button("Listar");
@@ -48,7 +48,7 @@ public class ClienteApp extends Application {
         configurarTabla();
 
         // Diseño de la interfaz
-        HBox formulario = new HBox(10, txtNombre, txtApellido, txtDireccion/*, btnAgregar*/, btnListar);
+        HBox formulario = new HBox(10, txtNombre, txtApellido, txtDireccion, btnAgregar, btnListar);
         VBox root = new VBox(10, formulario, tableClientes);
         Scene scene = new Scene(root, 800, 400);
 
