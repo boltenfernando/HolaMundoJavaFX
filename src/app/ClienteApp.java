@@ -209,6 +209,7 @@ public class ClienteApp extends Application {
         LocalDate cumpleaños = dpCumpleaños.getValue();
 
 
+
         if (nombre.isEmpty() || apellido.isEmpty() || direccion.isEmpty()) {
             mostrarAlerta("Error", "Todos los campos son obligatorios.");
             return;
@@ -222,7 +223,7 @@ public class ClienteApp extends Application {
                pstmt.setString(1, nombre);
                pstmt.setString(2, apellido);
                pstmt.setString(3, direccion);
-               pstmt.setObject(4, cumpleaños); // Inserta la fecha de cumpleaños
+               pstmt.setString(4, (cumpleaños != null) ? cumpleaños.toString() : null);
                pstmt.executeUpdate();
                txtNombre.clear();
                txtApellido.clear();
@@ -236,7 +237,8 @@ public class ClienteApp extends Application {
 
     private void listarClientes() {
         clientes.clear();
-        String sql = "SELECT id, nombre, apellido, direccion FROM clientes";
+        String sql = "SELECT id, nombre, apellido, direccion, cumpleaños FROM clientes";
+
 
         try (Connection conn = TestSQLite.connect(); // Reutilizamos la conexión de TestSQLite
              PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -247,7 +249,8 @@ public class ClienteApp extends Application {
                         rs.getInt("id"),
                         rs.getString("nombre"),
                         rs.getString("apellido"),
-                        rs.getString("direccion")
+                        rs.getString("direccion"),
+                        rs.getString("cumpleaños")
                 ));
             }
             tableClientes.setItems(clientes);
