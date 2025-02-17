@@ -2,6 +2,7 @@ package db;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -30,7 +31,7 @@ public class TestSQLite {
                    + "nombre TEXT NOT NULL, "
                    + "apellido TEXT NOT NULL, "
                    + "direccion TEXT NOT NULL, "
-                   + "cumpleaños DATE);"; // Agregamos la columna cumpleaños
+                   + "cumpleaños DATE);"; // Agregamos la columna 'cumpleaños'
 
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
@@ -40,7 +41,6 @@ public class TestSQLite {
             System.out.println("Error al crear la tabla: " + e.getMessage());
         }
     }
-
 
     // Método para limpiar la tabla (opcional, por si querés reiniciar datos)
     public static void clearTable() {
@@ -67,4 +67,35 @@ public class TestSQLite {
             System.out.println("Error al eliminar la tabla: " + e.getMessage());
         }
     }
+    
+    public static void verificarYAgregarColumnaCumpleaños() {
+        String checkColumnSQL = "PRAGMA table_info(clientes);";
+        boolean columnaExiste = false;
+
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(checkColumnSQL)) {
+
+            while (rs.next()) {
+                String columnName = rs.getString("name");
+                if ("cumpleaños".equals(columnName)) {
+                    columnaExiste = true;
+                    break;
+                }
+            }
+
+            if (!columnaExiste) {
+                System.out.println("La columna 'cumpleaños' no existe. Se agregará ahora...");
+                String alterTableSQL = "ALTER TABLE clientes ADD COLUMN cumpleaños DATE;";
+                stmt.execute(alterTableSQL);
+                System.out.println("Columna 'cumpleaños' agregada correctamente.");
+            } else {
+                System.out.println("La columna 'cumpleaños' ya existe.");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error verificando/agregando la columna 'cumpleaños': " + e.getMessage());
+        }
+    }
+
 }

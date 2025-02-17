@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 
 import db.TestSQLite;
 
@@ -29,6 +30,8 @@ public class ClienteApp extends Application {
     public void start(Stage primaryStage) {
     	
     	TestSQLite.createTable(); //Asegurar que la tabla 'clientes' existe
+        TestSQLite.verificarYAgregarColumnaCumpleaños(); // Verificar y agregar la columna 'cumpleaños' si falta
+
 
         // Mostrar recordatorios al iniciar la app
         mostrarRecordatorios();
@@ -175,6 +178,8 @@ public class ClienteApp extends Application {
         String nombre = txtNombre.getText();
         String apellido = txtApellido.getText();
         String direccion = txtDireccion.getText();
+        LocalDate cumpleaños = dpCumpleaños.getValue();
+
 
         if (nombre.isEmpty() || apellido.isEmpty() || direccion.isEmpty()) {
             mostrarAlerta("Error", "Todos los campos son obligatorios.");
@@ -184,28 +189,22 @@ public class ClienteApp extends Application {
         String sql = "INSERT INTO clientes(nombre, apellido, direccion, cumpleaños) VALUES(?, ?, ?, ?)";
 
 
-        try (Connection conn = TestSQLite.connect(); // Reutilizamos la conexión de TestSQLite
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        	pstmt.setString(1, nombre);
-        	pstmt.setString(2, apellido);
-        	pstmt.setString(3, direccion);
-
-        	// Si no se ingresa una fecha, usar un valor por defecto (Ejemplo: 1 de enero de 2000)
-        	if (dpCumpleaños.getValue() != null) {
-        	    pstmt.setString(4, dpCumpleaños.getValue().toString()); // Guardar la fecha seleccionada
-        	} else {
-        	    pstmt.setString(4, "2000-01-01"); // Fecha por defecto
-        	}
-
-            pstmt.executeUpdate();
-            txtNombre.clear();
-            txtApellido.clear();
-            txtDireccion.clear();
-            listarClientes(); // Actualizar la tabla después de agregar
-        } catch (SQLException e) {
-            mostrarAlerta("Error", "No se pudo agregar el cliente: " + e.getMessage());
-        }
-    }
+        try (Connection conn = TestSQLite.connect();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+               pstmt.setString(1, nombre);
+               pstmt.setString(2, apellido);
+               pstmt.setString(3, direccion);
+               pstmt.setObject(4, cumpleaños); // Inserta la fecha de cumpleaños
+               pstmt.executeUpdate();
+               txtNombre.clear();
+               txtApellido.clear();
+               txtDireccion.clear();
+               dpCumpleaños.setValue(null); // Limpia el DatePicker
+               listarClientes(); // Actualiza la tabla después de agregar
+           } catch (SQLException e) {
+               mostrarAlerta("Error", "No se pudo agregar el cliente: " + e.getMessage());
+           }
+       }
 
     private void listarClientes() {
         clientes.clear();
