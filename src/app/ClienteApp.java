@@ -64,16 +64,39 @@ public class ClienteApp extends Application {
     }
     
     private void mostrarRecordatorios() {
-        String recordatorios = obtenerRecordatorios();
-        if (recordatorios.isEmpty()) {
-            recordatorios = "Hoy no hay recordatorios.";
+        String sql = "SELECT nombre, apellido, cumpleaños FROM clientes WHERE strftime('%m-%d', cumpleaños) = strftime('%m-%d', 'now')";
+
+        try (Connection conn = TestSQLite.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            StringBuilder recordatorios = new StringBuilder();
+            LocalDate hoy = LocalDate.now();
+
+            while (rs.next()) {
+                String nombre = rs.getString("nombre");
+                String apellido = rs.getString("apellido");
+                LocalDate cumpleaños = rs.getObject("cumpleaños", LocalDate.class);
+
+                if (cumpleaños != null) {
+                    int edad = hoy.getYear() - cumpleaños.getYear();
+                    recordatorios.append(String.format("Hoy es el cumpleaños de %s %s (Cumple %d años).\n", nombre, apellido, edad));
+                } else {
+                    recordatorios.append(String.format("Hoy es el cumpleaños de %s %s.\n", nombre, apellido));
+                }
+            }
+
+            if (recordatorios.length() > 0) {
+                mostrarAlerta("Recordatorios de Cumpleaños", recordatorios.toString());
+            } else {
+                mostrarAlerta("Recordatorios de Cumpleaños", "Hoy no hay cumpleaños.");
+            }
+
+        } catch (SQLException e) {
+            mostrarAlerta("Error", "Error obteniendo recordatorios: " + e.getMessage());
         }
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Recordatorios del Día");
-        alert.setHeaderText(null);
-        alert.setContentText(recordatorios);
-        alert.showAndWait();
     }
+
     
    
     private String obtenerRecordatorios() {
