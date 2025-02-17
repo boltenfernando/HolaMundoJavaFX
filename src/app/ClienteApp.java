@@ -1,14 +1,4 @@
 package app;
-import javafx.application.Application;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,6 +6,21 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 
 import db.TestSQLite;
+import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
 public class ClienteApp extends Application {
 
@@ -147,8 +152,7 @@ public class ClienteApp extends Application {
         TableColumn<Cliente, String> colDireccion = new TableColumn<>("Dirección");
         colDireccion.setCellValueFactory(new PropertyValueFactory<>("direccion"));
 
-        // Nueva columna: Cumpleaños
-        TableColumn<Cliente, String> colCumpleaños = new TableColumn<>("Cumpleaños");
+        TableColumn<Cliente, LocalDate> colCumpleaños = new TableColumn<>("Cumpleaños");
         colCumpleaños.setCellValueFactory(new PropertyValueFactory<>("cumpleaños"));
 
         // Columna de Modificar
@@ -206,9 +210,7 @@ public class ClienteApp extends Application {
         String nombre = txtNombre.getText();
         String apellido = txtApellido.getText();
         String direccion = txtDireccion.getText();
-        LocalDate cumpleaños = dpCumpleaños.getValue();
-
-
+        LocalDate fechaCumpleaños = dpCumpleaños.getValue(); // Obtener la fecha del DatePicker
 
         if (nombre.isEmpty() || apellido.isEmpty() || direccion.isEmpty()) {
             mostrarAlerta("Error", "Todos los campos son obligatorios.");
@@ -223,12 +225,12 @@ public class ClienteApp extends Application {
                pstmt.setString(1, nombre);
                pstmt.setString(2, apellido);
                pstmt.setString(3, direccion);
-               pstmt.setString(4, (cumpleaños != null) ? cumpleaños.toString() : null);
+               pstmt.setString(4, (fechaCumpleaños != null) ? fechaCumpleaños.toString() : null); // Convertir LocalDate a String
                pstmt.executeUpdate();
                txtNombre.clear();
                txtApellido.clear();
                txtDireccion.clear();
-               dpCumpleaños.setValue(null); // Limpia el DatePicker
+               dpCumpleaños.setValue(null);
                listarClientes(); // Actualiza la tabla después de agregar
            } catch (SQLException e) {
                mostrarAlerta("Error", "No se pudo agregar el cliente: " + e.getMessage());
@@ -239,26 +241,31 @@ public class ClienteApp extends Application {
         clientes.clear();
         String sql = "SELECT id, nombre, apellido, direccion, cumpleaños FROM clientes";
 
-
-        try (Connection conn = TestSQLite.connect(); // Reutilizamos la conexión de TestSQLite
+        try (Connection conn = TestSQLite.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
-                clientes.add(new Cliente(
-                        rs.getInt("id"),
-                        rs.getString("nombre"),
-                        rs.getString("apellido"),
-                        rs.getString("direccion"),
-                        rs.getString("cumpleaños")
-                ));
+                int id = rs.getInt("id");
+                String nombre = rs.getString("nombre");
+                String apellido = rs.getString("apellido");
+                String direccion = rs.getString("direccion");
+
+                // Convertir el String de la base de datos a LocalDate (manejo de valores nulos)
+                String fechaCumpleañosStr = rs.getString("cumpleaños");
+                LocalDate fechaCumpleaños = (fechaCumpleañosStr != null && !fechaCumpleañosStr.isEmpty()) 
+                                            ? LocalDate.parse(fechaCumpleañosStr)
+                                            : null;
+
+                // Agregar cliente a la lista
+                clientes.add(new Cliente(id, nombre, apellido, direccion, fechaCumpleaños));
             }
             tableClientes.setItems(clientes);
         } catch (SQLException e) {
             mostrarAlerta("Error", "No se pudo listar los clientes: " + e.getMessage());
         }
     }
-    
+
     private void cargarClienteEnFormulario(Cliente cliente) {
         txtNombre.setText(cliente.getNombre());
         txtApellido.setText(cliente.getApellido());

@@ -7,15 +7,15 @@ public class Cliente {
     private final String nombre;
     private final String apellido;
     private final String direccion;
-    private String cumpleaños;
+    private LocalDate cumpleaños; // Nuevo atributo
 
 
-    public Cliente(int id, String nombre, String apellido, String direccion, String string) {
+    public Cliente(int id, String nombre, String apellido, String direccion, LocalDate cumpleaños) {
         this.id = id;
         this.nombre = nombre;
         this.apellido = apellido;
         this.direccion = direccion;
-        this.cumpleaños = string;
+        this.cumpleaños = cumpleaños;
     }
 
 
@@ -34,7 +34,11 @@ public class Cliente {
     public String getDireccion() {
         return direccion;
     }
-    public String getCumpleaños() {
-        return apellido;
+ // Métodos getter y setter para 'cumpleaños'
+    public LocalDate getCumpleaños() {
+        return cumpleaños;
+    }
+    public void setCumpleaños(LocalDate cumpleaños) {
+        this.cumpleaños = cumpleaños;
     }
 }
