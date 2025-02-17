@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import db.TestSQLite;
 import javafx.application.Application;
@@ -69,38 +70,59 @@ public class ClienteApp extends Application {
     }
     
     private void mostrarRecordatorios() {
-        String sql = "SELECT nombre, apellido, cumpleaños FROM clientes WHERE strftime('%m-%d', cumpleaños) = strftime('%m-%d', 'now')";
+        LocalDate hoy = LocalDate.now();
+        LocalDate semanaFutura = hoy.plusDays(7);
+
+        String sql = "SELECT nombre, apellido, cumpleaños FROM clientes WHERE strftime('%m-%d', cumpleaños) BETWEEN strftime('%m-%d', ?) AND strftime('%m-%d', ?)";
+
+        StringBuilder recordatoriosHoy = new StringBuilder();
+        StringBuilder recordatoriosSemana = new StringBuilder();
 
         try (Connection conn = TestSQLite.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, hoy.toString()); 
+            pstmt.setString(2, semanaFutura.toString()); 
 
-            StringBuilder recordatorios = new StringBuilder();
-            LocalDate hoy = LocalDate.now();
+            ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
                 String nombre = rs.getString("nombre");
                 String apellido = rs.getString("apellido");
-                LocalDate cumpleaños = rs.getObject("cumpleaños", LocalDate.class);
+                String fechaCumpleañosStr = rs.getString("cumpleaños");
+                LocalDate fechaCumpleaños = (fechaCumpleañosStr != null) ? LocalDate.parse(fechaCumpleañosStr) : null;
 
-                if (cumpleaños != null) {
-                    int edad = hoy.getYear() - cumpleaños.getYear();
-                    recordatorios.append(String.format("Hoy es el cumpleaños de %s %s (Cumple %d años).\n", nombre, apellido, edad));
-                } else {
-                    recordatorios.append(String.format("Hoy es el cumpleaños de %s %s.\n", nombre, apellido));
+                if (fechaCumpleaños != null) {
+                    if (fechaCumpleaños.equals(hoy)) {
+                        recordatoriosHoy.append("🎉 Hoy es el cumpleaños de ")
+                                .append(nombre).append(" ").append(apellido).append("!\n");
+                    } else {
+                        recordatoriosSemana.append("📅 Esta semana cumple ")
+                                .append(nombre).append(" ").append(apellido)
+                                .append(" el ").append(fechaCumpleaños.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+                                .append(".\n");
+                    }
                 }
             }
 
-            if (recordatorios.length() > 0) {
-                mostrarAlerta("Recordatorios de Cumpleaños", recordatorios.toString());
-            } else {
-                mostrarAlerta("Recordatorios de Cumpleaños", "Hoy no hay cumpleaños.");
+            // Mostrar pop-up con la información recolectada
+            String mensajeFinal = "";
+            if (recordatoriosHoy.length() > 0) {
+                mensajeFinal += recordatoriosHoy.toString() + "\n";
             }
+            if (recordatoriosSemana.length() > 0) {
+                mensajeFinal += recordatoriosSemana.toString();
+            }
+            if (mensajeFinal.isEmpty()) {
+                mensajeFinal = "Hoy no hay cumpleaños ni recordatorios pendientes.";
+            }
+
+            mostrarAlerta("🎂 Recordatorios de Cumpleaños", mensajeFinal);
 
         } catch (SQLException e) {
             mostrarAlerta("Error", "Error obteniendo recordatorios: " + e.getMessage());
         }
     }
+
 
     
    
