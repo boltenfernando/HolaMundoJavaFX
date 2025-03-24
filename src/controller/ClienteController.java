@@ -2,9 +2,9 @@ package controller;
 
 import dao.ClienteDAO;
 import model.Cliente;
+import util.ErrorHandler;
 import util.LoggerUtil;
 import javafx.collections.ObservableList;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TableView;
@@ -51,13 +51,12 @@ public class ClienteController {
     
     // Aplica clases de estilo a los controles para mejorar la apariencia según el CSS
     private void applyStyles() {
-        // Asegurate de que en tu archivo CSS estén definidas estas clases.
-        txtNombre.getStyleClass().add("text-field");
-        txtApellido.getStyleClass().add("text-field");
-        txtDireccion.getStyleClass().add("text-field");
-        dpCumpleaños.getStyleClass().add("date-picker");
-        btnAgregar.getStyleClass().add("button");
-        // Si tenés más controles, también podés agregarles estilo.
+        // Asegurate de que en tu archivo CSS estén definidas estas clases personalizadas.
+        txtNombre.getStyleClass().add("custom-text-field");
+        txtApellido.getStyleClass().add("custom-text-field");
+        txtDireccion.getStyleClass().add("custom-text-field");
+        dpCumpleaños.getStyleClass().add("custom-date-picker");
+        btnAgregar.getStyleClass().add("custom-button");
     }
 
     // Método para agregar un cliente
@@ -68,7 +67,7 @@ public class ClienteController {
         LocalDate fechaCumpleaños = dpCumpleaños.getValue();
 
         if (nombre.isEmpty() || apellido.isEmpty() || direccion.isEmpty()) {
-            mostrarAlerta("Error", "Todos los campos son obligatorios.");
+            ErrorHandler.showError("Error", "Todos los campos son obligatorios.");
             return;
         }
         Cliente cliente = new Cliente(0, nombre, apellido, direccion, fechaCumpleaños);
@@ -79,7 +78,7 @@ public class ClienteController {
             listarClientes();
         } catch (SQLException ex) {
             logger.severe("Error al agregar cliente: " + ex.getMessage());
-            mostrarAlerta("Error", "No se pudo agregar el cliente: " + ex.getMessage());
+            ErrorHandler.showError("Error", "No se pudo agregar el cliente: " + ex.getMessage());
         }
     }
 
@@ -92,7 +91,7 @@ public class ClienteController {
             logger.info("Listado de clientes actualizado. Total: " + clientes.size());
         } catch (SQLException ex) {
             logger.severe("Error al listar clientes: " + ex.getMessage());
-            mostrarAlerta("Error", "No se pudo listar los clientes: " + ex.getMessage());
+            ErrorHandler.showError("Error", "No se pudo listar los clientes: " + ex.getMessage());
         }
     }
 
@@ -104,7 +103,7 @@ public class ClienteController {
         LocalDate fechaCumpleaños = dpCumpleaños.getValue();
 
         if (nombre.isEmpty() || apellido.isEmpty() || direccion.isEmpty()) {
-            mostrarAlerta("Error", "Todos los campos son obligatorios.");
+            ErrorHandler.showError("Error", "Todos los campos son obligatorios.");
             return;
         }
         Cliente clienteActualizado = new Cliente(cliente.getId(), nombre, apellido, direccion, fechaCumpleaños);
@@ -118,7 +117,7 @@ public class ClienteController {
             btnAgregar.setOnAction(e -> agregarCliente());
         } catch (SQLException ex) {
             logger.severe("Error al modificar cliente: " + ex.getMessage());
-            mostrarAlerta("Error", "No se pudo modificar el cliente: " + ex.getMessage());
+            ErrorHandler.showError("Error", "No se pudo modificar el cliente: " + ex.getMessage());
         }
     }
 
@@ -130,7 +129,7 @@ public class ClienteController {
             listarClientes();
         } catch (SQLException ex) {
             logger.severe("Error al eliminar cliente: " + ex.getMessage());
-            mostrarAlerta("Error", "No se pudo eliminar el cliente: " + ex.getMessage());
+            ErrorHandler.showError("Error", "No se pudo eliminar el cliente: " + ex.getMessage());
         }
     }
 
@@ -153,13 +152,5 @@ public class ClienteController {
         txtApellido.clear();
         txtDireccion.clear();
         dpCumpleaños.setValue(null);
-    }
-
-    // Método para mostrar alertas
-    private void mostrarAlerta(String titulo, String mensaje) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(titulo);
-        alert.setContentText(mensaje);
-        alert.showAndWait();
     }
 }

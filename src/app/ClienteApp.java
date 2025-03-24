@@ -46,7 +46,7 @@ public class ClienteApp extends Application {
         TestSQLite.createTable();
         TestSQLite.verificarYAgregarColumnaCumpleaños();
         // Mostrar recordatorios al iniciar la app
-        mostrarRecordatorios();
+        service.RecordatorioService.mostrarRecordatorios();
 
         // Configuración de los campos de texto
         txtNombre.setPromptText("Nombre");
