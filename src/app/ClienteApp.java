@@ -33,7 +33,7 @@ public class ClienteApp extends Application {
 
         // Botón Nuevo Cliente (izquierda)
         Button btnNuevo = new Button("Nuevo Cliente");
-        btnNuevo.setOnAction(e -> controller.mostrarFormularioModal());
+        btnNuevo.setOnAction(e -> controller.mostrarFormularioModal(null));
 
         VBox panelIzquierdo = new VBox(btnNuevo);
         panelIzquierdo.setPadding(new Insets(10));
@@ -41,7 +41,7 @@ public class ClienteApp extends Application {
 
         // Panel central: filtros + tabla
         ChoiceBox<String> cbCategoria = new ChoiceBox<>();
-        cbCategoria.getItems().addAll("","A+","A","B","C","D");
+        cbCategoria.getItems().addAll("", "A+", "A", "B", "C", "D");
         cbCategoria.setValue("");
         TextField tfNombre = new TextField(); tfNombre.setPromptText("Nombre");
         TextField tfApellido = new TextField(); tfApellido.setPromptText("Apellido");
