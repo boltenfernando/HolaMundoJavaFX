@@ -1,43 +1,47 @@
 package app;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-
 import controller.ClienteController;
 import db.TestSQLite;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.DatePicker;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.Cliente;
+import service.RecordatorioService;
 
 public class ClienteApp extends Application {
 
     private final ObservableList<Cliente> clientes = FXCollections.observableArrayList();
+
+    // Controles para el formulario y la tabla
     private TextField txtNombre = new TextField();
     private TextField txtApellido = new TextField();
     private TextField txtDireccion = new TextField();
     private DatePicker dpCumpleaños = new DatePicker();
-    private TableView<Cliente> tableClientes = new TableView<>();
     private Button btnAgregar = new Button("Agregar");
-    private Button btnListar = new Button("Listar");
+    private TableView<Cliente> tableClientes = new TableView<>();
 
-    // Declaramos el controlador
+    // Botón temporal para resetear contactos (opcional)
+    private Button btnResetear = new Button("Resetear Contactos");
+
+    // Botón con ícono de lupa para reabrir el popup de recordatorios
+    private Button btnRecordatorios = new Button("🔍");
+
+    // Declaración del controlador
     private ClienteController controller;
 
     @Override
@@ -45,168 +49,142 @@ public class ClienteApp extends Application {
         // Configurar base de datos
         TestSQLite.createTable();
         TestSQLite.verificarYAgregarColumnaCumpleaños();
-        // Mostrar recordatorios al iniciar la app
-        service.RecordatorioService.mostrarRecordatorios();
 
-        // Configuración de los campos de texto
+        // Mostrar recordatorios al iniciar (popup)
+        RecordatorioService.mostrarRecordatorios();
+
+        // Configurar prompts para los TextField
         txtNombre.setPromptText("Nombre");
         txtApellido.setPromptText("Apellido");
         txtDireccion.setPromptText("Dirección");
 
-        // Configurar la tabla (mantén el método actual o refactorízalo luego)
-        configurarTabla();
+        // Instanciar el controlador pasando controles válidos
+        controller = new ClienteController(txtNombre, txtApellido, txtDireccion, dpCumpleaños, btnAgregar, tableClientes, clientes, new HBox());
 
-        // Crear el contenedor del formulario
-        HBox formulario = new HBox(10, txtNombre, txtApellido, txtDireccion, dpCumpleaños, btnAgregar, btnListar);
+        // Configurar el botón para resetear contactos (temporal)
+        btnResetear.setOnAction(e -> {
+            TestSQLite.clearTable(); // Borra todos los registros
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Resetear Contactos");
+            alert.setHeaderText(null);
+            alert.setContentText("Se han borrado todos los contactos. Reinicia la aplicación para reconstruir la base de datos con la nueva estructura.");
+            alert.showAndWait();
+            controller.listarClientes();
+        });
 
-        // Instanciar el controlador pasando las referencias de los controles
-        controller = new ClienteController(txtNombre, txtApellido, txtDireccion, dpCumpleaños, btnAgregar, tableClientes, clientes, formulario);
+        // Configurar el botón de recordatorios (lupa) para volver a mostrar el popup completo
+        btnRecordatorios.setOnAction(e -> RecordatorioService.mostrarRecordatorios());
+        btnRecordatorios.setStyle("-fx-font-size: 14px; -fx-background-color: transparent;");
 
-        // Configurar el botón "Listar" para refrescar la tabla
-        btnListar.setOnAction(e -> controller.listarClientes());
+        // Crear el MenuBar
+        MenuBar menuBar = new MenuBar();
+        Menu menuOpciones = new Menu("Opciones");
+        MenuItem miCrear = new MenuItem("Crear nuevo contacto");
+        MenuItem miBuscar = new MenuItem("Buscar contacto");
+        MenuItem miVerBase = new MenuItem("Ver base");
+        menuOpciones.getItems().addAll(miCrear, miBuscar, miVerBase);
+        menuBar.getMenus().add(menuOpciones);
 
-        VBox root = new VBox(10, formulario, tableClientes);
-        Scene scene = new Scene(root, 800, 400);
-        
-        // Verifica la ruta del CSS
-        System.out.println(getClass().getResource("/resources/style.css"));
-        // Cargar el archivo CSS en la escena
+        // Acciones del menú
+        miCrear.setOnAction(e -> {
+            // Limpiar el formulario y poner foco en el primer campo
+            controller.limpiarCampos();
+            txtNombre.requestFocus();
+        });
+
+        miBuscar.setOnAction(e -> mostrarBusqueda());
+        miVerBase.setOnAction(e -> mostrarContactosPorCategoria());
+
+        // Nuevo layout utilizando BorderPane
+        BorderPane root = new BorderPane();
+
+        // Panel superior: MenuBar
+        root.setTop(menuBar);
+
+        // Panel izquierdo: Panel extendido del formulario (obtenido desde el controlador) y la tabla
+        VBox panelIzquierdo = new VBox(10);
+        panelIzquierdo.getChildren().addAll(controller.obtenerPanelFormularioExtendido(), btnResetear, tableClientes);
+        panelIzquierdo.setPadding(new Insets(10));
+        root.setLeft(panelIzquierdo);
+
+        // Panel derecho: Panel de recordatorios reducido junto con el botón de lupa
+        VBox panelDerecho = new VBox(10);
+        VBox recordatoriosPeq = RecordatorioService.crearPanelRecordatoriosPequeno();
+        recordatoriosPeq.setPadding(new Insets(10));
+        panelDerecho.getChildren().addAll(recordatoriosPeq, btnRecordatorios);
+        panelDerecho.setPadding(new Insets(10));
+        root.setRight(panelDerecho);
+
+        Scene scene = new Scene(root, 1200, 600);
         scene.getStylesheets().add(getClass().getResource("/resources/style.css").toExternalForm());
-
         primaryStage.setTitle("Gestión de Clientes");
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        // Listar clientes al iniciar la aplicación
-        controller.listarClientes();
+        // Listar clientes al iniciar
         controller.listarClientes();
     }
 
- private void mostrarRecordatorios() {
-     LocalDate hoy = LocalDate.now();
-     LocalDate semanaFutura = hoy.plusDays(7);
+    // Método para mostrar la ventana de búsqueda de contactos
+    private void mostrarBusqueda() {
+        Stage stageBusqueda = new Stage();
+        stageBusqueda.initModality(Modality.APPLICATION_MODAL);
+        stageBusqueda.setTitle("Buscar Contacto");
 
-     String sql = "SELECT nombre, apellido, cumpleaños FROM clientes WHERE strftime('%m-%d', cumpleaños) BETWEEN strftime('%m-%d', ?) AND strftime('%m-%d', ?)";
-     StringBuilder recordatoriosHoy = new StringBuilder();
-     StringBuilder recordatoriosSemana = new StringBuilder();
+        TextField txtBusqueda = new TextField();
+        txtBusqueda.setPromptText("Buscar por nombre, apellido o referencia");
+        Button btnBuscar = new Button("Buscar");
 
-     try (Connection conn = TestSQLite.connect();
-          PreparedStatement pstmt = conn.prepareStatement(sql)) {
-         pstmt.setString(1, hoy.toString());
-         pstmt.setString(2, semanaFutura.toString());
+        TableView<Cliente> tablaBusqueda = new TableView<>();
+        // Configura las columnas mínimas (por ejemplo, nombre, apellido y referencia)
+        tablaBusqueda.getColumns().addAll(
+            ClienteAppHelper.crearColumna("Nombre", "nombre"),
+            ClienteAppHelper.crearColumna("Apellido", "apellido"),
+            ClienteAppHelper.crearColumna("Referencia", "referencia")
+        );
 
-         ResultSet rs = pstmt.executeQuery();
+        btnBuscar.setOnAction(e -> {
+            // Filtrar la lista de clientes según el término de búsqueda
+            String termino = txtBusqueda.getText().toLowerCase();
+            ObservableList<Cliente> filtrados = clientes.filtered(c ->
+                c.getNombre().toLowerCase().contains(termino) ||
+                c.getApellido().toLowerCase().contains(termino) ||
+                (c.getReferencia() != null && c.getReferencia().toLowerCase().contains(termino))
+            );
+            tablaBusqueda.setItems(filtrados);
+        });
 
-         while (rs.next()) {
-             String nombre = rs.getString("nombre");
-             String apellido = rs.getString("apellido");
-             String fechaCumpleañosStr = rs.getString("cumpleaños");
-             LocalDate fechaCumpleaños = (fechaCumpleañosStr != null) ? LocalDate.parse(fechaCumpleañosStr) : null;
+        VBox vboxBusqueda = new VBox(10, txtBusqueda, btnBuscar, tablaBusqueda);
+        vboxBusqueda.setPadding(new Insets(10));
+        Scene sceneBusqueda = new Scene(vboxBusqueda, 600, 400);
+        stageBusqueda.setScene(sceneBusqueda);
+        stageBusqueda.showAndWait();
+    }
 
-             if (fechaCumpleaños != null) {
-                 if (fechaCumpleaños.equals(hoy)) {
-                     recordatoriosHoy.append("🎉 Hoy es el cumpleaños de ")
-                         .append(nombre).append(" ").append(apellido).append("!\n");
-                 } else {
-                     recordatoriosSemana.append("📅 Esta semana cumple ")
-                         .append(nombre).append(" ").append(apellido)
-                         .append(" el ").append(fechaCumpleaños.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-                         .append(".\n");
-                 }
-             }
-         }
+    // Método para mostrar la ventana de "Ver base" (contactos por categoría)
+    private void mostrarContactosPorCategoria() {
+        Stage stageCategoria = new Stage();
+        stageCategoria.initModality(Modality.APPLICATION_MODAL);
+        stageCategoria.setTitle("Contactos por Categoría");
 
-         String mensajeFinal = "";
-         if (recordatoriosHoy.length() > 0) {
-             mensajeFinal += recordatoriosHoy.toString() + "\n";
-         }
-         if (recordatoriosSemana.length() > 0) {
-             mensajeFinal += recordatoriosSemana.toString();
-         }
-         if (mensajeFinal.isEmpty()) {
-             mensajeFinal = "Hoy no hay cumpleaños ni recordatorios pendientes.";
-         }
+        // Se crea una tabla para mostrar contactos con sus categorías
+        TableView<Cliente> tablaCategoria = new TableView<>();
+        tablaCategoria.getColumns().addAll(
+            ClienteAppHelper.crearColumna("Nombre", "nombre"),
+            ClienteAppHelper.crearColumna("Apellido", "apellido"),
+            ClienteAppHelper.crearColumna("Categoría", "categoria")
+        );
 
-         mostrarAlerta("🎂 Recordatorios de Cumpleaños", mensajeFinal);
+        // Se filtra la lista para mostrar solo aquellos con categoría asignada
+        ObservableList<Cliente> filtrados = clientes.filtered(c -> c.getCategoria() != null && !c.getCategoria().isEmpty());
+        tablaCategoria.setItems(filtrados);
 
-     } catch (SQLException e) {
-         mostrarAlerta("Error", "Error obteniendo recordatorios: " + e.getMessage());
-     }
- }
-
- private void mostrarAlerta(String titulo, String mensaje) {
-	    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-	    alert.setTitle(titulo);
-	    alert.setContentText(mensaje);
-	    alert.showAndWait();
-	}
-
- private void configurarTabla() {
-	    // Columna de ID
-	    TableColumn<Cliente, Integer> colId = new TableColumn<>("ID");
-	    colId.setCellValueFactory(new PropertyValueFactory<>("id"));
-
-	    // Columna de Nombre
-	    TableColumn<Cliente, String> colNombre = new TableColumn<>("Nombre");
-	    colNombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
-
-	    // Columna de Apellido
-	    TableColumn<Cliente, String> colApellido = new TableColumn<>("Apellido");
-	    colApellido.setCellValueFactory(new PropertyValueFactory<>("apellido"));
-
-	    // Columna de Dirección
-	    TableColumn<Cliente, String> colDireccion = new TableColumn<>("Dirección");
-	    colDireccion.setCellValueFactory(new PropertyValueFactory<>("direccion"));
-
-	    // Columna de Cumpleaños
-	    TableColumn<Cliente, LocalDate> colCumpleaños = new TableColumn<>("Cumpleaños");
-	    colCumpleaños.setCellValueFactory(new PropertyValueFactory<>("cumpleaños"));
-
-	    // Columna para Modificar
-	    TableColumn<Cliente, Void> colModificar = new TableColumn<>("Modificar");
-	    colModificar.setCellFactory(tc -> new TableCell<Cliente, Void>() {
-	        private final Button btnModificar = new Button("Modificar");
-
-	        {
-	            btnModificar.setOnAction(e -> {
-	                Cliente cliente = getTableView().getItems().get(getIndex());
-	                // Llama al método del controlador para cargar el cliente en el formulario
-	                controller.cargarClienteEnFormulario(cliente);
-	            });
-	        }
-
-	        @Override
-	        protected void updateItem(Void item, boolean empty) {
-	            super.updateItem(item, empty);
-	            setGraphic(empty ? null : btnModificar);
-	        }
-	    });
-
-	    // Columna para Eliminar
-	    TableColumn<Cliente, Void> colEliminar = new TableColumn<>("Eliminar");
-	    colEliminar.setCellFactory(tc -> new TableCell<Cliente, Void>() {
-	        private final Button btnEliminar = new Button("Eliminar");
-
-	        {
-	            btnEliminar.setOnAction(e -> {
-	                Cliente cliente = getTableView().getItems().get(getIndex());
-	                // Llama al método del controlador para eliminar el cliente
-	                controller.eliminarCliente(cliente);
-	            });
-	        }
-
-	        @Override
-	        protected void updateItem(Void item, boolean empty) {
-	            super.updateItem(item, empty);
-	            setGraphic(empty ? null : btnEliminar);
-	        }
-	    });
-
-	    // Configurar las columnas en la tabla
-	    tableClientes.getColumns().clear();
-	    tableClientes.getColumns().addAll(colId, colNombre, colApellido, colDireccion, colCumpleaños, colModificar, colEliminar);
-	}
-
+        VBox vboxCategoria = new VBox(10, tablaCategoria);
+        vboxCategoria.setPadding(new Insets(10));
+        Scene sceneCategoria = new Scene(vboxCategoria, 600, 400);
+        stageCategoria.setScene(sceneCategoria);
+        stageCategoria.showAndWait();
+    }
 
     public static void main(String[] args) {
         launch(args);

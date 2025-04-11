@@ -24,15 +24,34 @@ public class TestSQLite {
         }
     }
 
- // Método para crear la tabla 'clientes'
+    // Método para crear la tabla 'clientes' con campos extendidos
     public static void createTable() {
         String sql = "CREATE TABLE IF NOT EXISTS clientes ("
                    + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                    + "nombre TEXT NOT NULL, "
                    + "apellido TEXT NOT NULL, "
+                   + "referencia TEXT, "
+                   + "cumpleaños DATE, "
+                   + "esPadreOMadre INTEGER, "
+                   + "gustosMusicales TEXT, "
+                   + "gustosFutbol TEXT, "
+                   + "gustosComidas TEXT, "
+                   + "redesSociales TEXT, "
+                   + "telefono TEXT, "
+                   + "email TEXT, "
                    + "direccion TEXT NOT NULL, "
-                   + "cumpleaños DATE);"; // Agregamos la columna 'cumpleaños'
-
+                   + "ocupacion TEXT, "
+                   + "fueCliente INTEGER, "
+                   + "fechaCompraVenta DATE, "
+                   + "categoria TEXT, "
+                   + "deseaContacto INTEGER, "
+                   + "proximoContacto DATE, "
+                   + "temasConversacion TEXT, "
+                   + "lugaresVisita TEXT, "
+                   + "datosAdicionales TEXT, "
+                   + "referidoPor TEXT, "
+                   + "refirioA TEXT"
+                   + ");";
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
@@ -42,10 +61,9 @@ public class TestSQLite {
         }
     }
 
-    // Método para limpiar la tabla (opcional, por si querés reiniciar datos)
+    // Método para limpiar la tabla (opcional)
     public static void clearTable() {
         String sql = "DELETE FROM clientes";
-
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
             int rowsAffected = stmt.executeUpdate(sql);
@@ -58,7 +76,6 @@ public class TestSQLite {
     // Método para eliminar la tabla (opcional)
     public static void dropTable() {
         String sql = "DROP TABLE IF EXISTS clientes";
-
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
@@ -71,11 +88,9 @@ public class TestSQLite {
     public static void verificarYAgregarColumnaCumpleaños() {
         String checkColumnSQL = "PRAGMA table_info(clientes);";
         boolean columnaExiste = false;
-
         try (Connection conn = connect();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(checkColumnSQL)) {
-
             while (rs.next()) {
                 String columnName = rs.getString("name");
                 if ("cumpleaños".equals(columnName)) {
@@ -83,7 +98,6 @@ public class TestSQLite {
                     break;
                 }
             }
-
             if (!columnaExiste) {
                 System.out.println("La columna 'cumpleaños' no existe. Se agregará ahora...");
                 String alterTableSQL = "ALTER TABLE clientes ADD COLUMN cumpleaños DATE;";
@@ -92,10 +106,8 @@ public class TestSQLite {
             } else {
                 System.out.println("La columna 'cumpleaños' ya existe.");
             }
-
         } catch (SQLException e) {
             System.out.println("Error verificando/agregando la columna 'cumpleaños': " + e.getMessage());
         }
     }
-
 }

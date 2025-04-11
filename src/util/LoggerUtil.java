@@ -8,17 +8,12 @@ public class LoggerUtil {
 
     static {
         try {
-            // Configurar un FileHandler para guardar los logs en un archivo
             Handler fileHandler = new FileHandler("app.log", true);
             fileHandler.setFormatter(new SimpleFormatter());
             logger.addHandler(fileHandler);
-
-            // Configurar un ConsoleHandler para ver logs en la consola
             ConsoleHandler consoleHandler = new ConsoleHandler();
             consoleHandler.setFormatter(new SimpleFormatter());
             logger.addHandler(consoleHandler);
-
-            // Establecer nivel de log
             logger.setLevel(Level.ALL);
             fileHandler.setLevel(Level.ALL);
             consoleHandler.setLevel(Level.ALL);
