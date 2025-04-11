@@ -12,102 +12,71 @@ import javafx.stage.Stage;
 import model.Cliente;
 import service.RecordatorioService;
 import util.ErrorHandler;
-import util.LoggerUtil;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.logging.Logger;
 
 public class ClienteController {
     private final ObservableList<Cliente> clientes;
     private TableView<Cliente> tableClientes;
-    private VBox panelFormulario;
     private VBox panelRecordatorios;
-
-    // Form controls
-    private TextField txtNombre, txtApellido, txtReferencia, txtCategoria;
-    private DatePicker dpCumpleaños;
-    private CheckBox cbEsPadreOMadre;
-    private TextField txtGustosMusicales, txtGustosFutbol, txtGustosComidas, txtRedesSociales;
-    private TextField txtTelefono, txtEmail, txtDireccion, txtOcupacion;
-    private CheckBox cbFueCliente, cbDeseaContacto;
-    private DatePicker dpFechaCompraVenta, dpProximoContacto;
-    private TextField txtTemasConversacion, txtLugaresVisita, txtDatosAdicionales, txtReferidoPor, txtRefirioA;
-    private Button btnAgregar, btnBuscarRecordatorios;
-
-    private static final Logger logger = LoggerUtil.getLogger();
 
     public ClienteController(ObservableList<Cliente> clientes) {
         this.clientes = clientes;
-        inicializarControles();
         configurarTabla();
         configurarRecordatorios();
-    }
-
-    private void inicializarControles() {
-        txtNombre = new TextField(); txtNombre.setPromptText("Nombre");
-        txtApellido = new TextField(); txtApellido.setPromptText("Apellido");
-        txtCategoria = new TextField(); txtCategoria.setPromptText("Categoría");
-        txtReferencia = new TextField(); txtReferencia.setPromptText("Referencia");
-        dpCumpleaños = new DatePicker();
-        cbEsPadreOMadre = new CheckBox("Es padre/madre");
-        txtGustosMusicales = new TextField(); txtGustosMusicales.setPromptText("Gustos musicales");
-        txtGustosFutbol = new TextField(); txtGustosFutbol.setPromptText("Gustos fútbol");
-        txtGustosComidas = new TextField(); txtGustosComidas.setPromptText("Gustos comidas");
-        txtRedesSociales = new TextField(); txtRedesSociales.setPromptText("Redes sociales");
-        txtTelefono = new TextField(); txtTelefono.setPromptText("Teléfono");
-        txtEmail = new TextField(); txtEmail.setPromptText("Email");
-        txtDireccion = new TextField(); txtDireccion.setPromptText("Dirección");
-        txtOcupacion = new TextField(); txtOcupacion.setPromptText("Ocupación");
-        cbFueCliente = new CheckBox("Fue cliente");
-        dpFechaCompraVenta = new DatePicker();
-        cbDeseaContacto = new CheckBox("Desea contacto");
-        dpProximoContacto = new DatePicker();
-        txtTemasConversacion = new TextField(); txtTemasConversacion.setPromptText("Temas conversación");
-        txtLugaresVisita = new TextField(); txtLugaresVisita.setPromptText("Lugares visita");
-        txtDatosAdicionales = new TextField(); txtDatosAdicionales.setPromptText("Datos adicionales");
-        txtReferidoPor = new TextField(); txtReferidoPor.setPromptText("Referido por");
-        txtRefirioA = new TextField(); txtRefirioA.setPromptText("Refirió a");
-
-        btnAgregar = new Button("Agregar Cliente");
-        btnAgregar.setOnAction(e -> agregarCliente());
     }
 
     private void configurarTabla() {
         tableClientes = new TableView<>();
         TableColumn<Cliente, String> colCat = new TableColumn<>("Categoría");
         colCat.setCellValueFactory(new PropertyValueFactory<>("categoria"));
+
         TableColumn<Cliente, String> colNom = new TableColumn<>("Nombre");
         colNom.setCellValueFactory(new PropertyValueFactory<>("nombre"));
+
         TableColumn<Cliente, String> colApe = new TableColumn<>("Apellido");
         colApe.setCellValueFactory(new PropertyValueFactory<>("apellido"));
+
         TableColumn<Cliente, String> colRef = new TableColumn<>("Referencia");
         colRef.setCellValueFactory(new PropertyValueFactory<>("referencia"));
 
+        // Columna VER
         TableColumn<Cliente, Void> colVer = new TableColumn<>("VER");
         colVer.setCellFactory(tc -> new TableCell<>() {
             private final Button btn = new Button("VER");
-            { btn.setOnAction(e -> mostrarDetalle(getTableView().getItems().get(getIndex()))); }
+            {
+                btn.setOnAction(e -> mostrarDetalle(getTableView().getItems().get(getIndex())));
+            }
+            @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : btn);
             }
         });
 
+        // Columna EDITAR
         TableColumn<Cliente, Void> colEditar = new TableColumn<>("EDITAR");
         colEditar.setCellFactory(tc -> new TableCell<>() {
             private final Button btn = new Button("EDITAR");
-            { btn.setOnAction(e -> cargarParaEdicion(getTableView().getItems().get(getIndex()))); }
+            {
+                btn.setOnAction(e -> cargarParaEdicion(getTableView().getItems().get(getIndex())));
+            }
+            @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : btn);
             }
         });
 
+        // Columna ELIMINAR
         TableColumn<Cliente, Void> colEliminar = new TableColumn<>("ELIMINAR");
         colEliminar.setCellFactory(tc -> new TableCell<>() {
             private final Button btn = new Button("ELIMINAR");
-            { btn.setOnAction(e -> eliminarConfirmacion(getTableView().getItems().get(getIndex()))); }
+            {
+                btn.setOnAction(e -> eliminarConfirmacion(getTableView().getItems().get(getIndex())));
+            }
+            @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : btn);
@@ -119,27 +88,9 @@ public class ClienteController {
 
     private void configurarRecordatorios() {
         panelRecordatorios = RecordatorioService.crearPanelRecordatoriosPequeno();
-        btnBuscarRecordatorios = new Button("🔍");
-        btnBuscarRecordatorios.setOnAction(e -> RecordatorioService.mostrarRecordatorios());
-    }
-
-    // Muestra el formulario en blanco para crear un nuevo cliente
-    public void mostrarFormularioNuevo() {
-        limpiarCampos();
-    }
-
-    public VBox obtenerPanelFormulario() {
-        panelFormulario = new VBox(10,
-            new Label("Formulario Cliente"),
-            txtCategoria, txtNombre, txtApellido, txtReferencia, dpCumpleaños, cbEsPadreOMadre,
-            txtGustosMusicales, txtGustosFutbol, txtGustosComidas, txtRedesSociales,
-            txtTelefono, txtEmail, txtDireccion, txtOcupacion, cbFueCliente,
-            dpFechaCompraVenta, cbDeseaContacto, dpProximoContacto,
-            txtTemasConversacion, txtLugaresVisita, txtDatosAdicionales, txtReferidoPor, txtRefirioA,
-            btnAgregar
-        );
-        panelFormulario.setPadding(new Insets(10));
-        return panelFormulario;
+        Button btnLupa = new Button("🔍");
+        btnLupa.setOnAction(e -> RecordatorioService.mostrarRecordatorios());
+        panelRecordatorios.getChildren().add(btnLupa);
     }
 
     public TableView<Cliente> obtenerTablaClientes() {
@@ -147,7 +98,7 @@ public class ClienteController {
     }
 
     public VBox obtenerPanelRecordatoriosConLupa() {
-        return new VBox(10, panelRecordatorios, btnBuscarRecordatorios);
+        return panelRecordatorios;
     }
 
     public void listarClientes() {
@@ -160,78 +111,33 @@ public class ClienteController {
         }
     }
 
-    public void agregarCliente() {
-        String nombre = txtNombre.getText();
-        String apellido = txtApellido.getText();
-        String categoria = txtCategoria.getText();
-        if (nombre.isEmpty() || apellido.isEmpty() || categoria.isEmpty()) {
-            ErrorHandler.showError("Error", "Nombre, Apellido y Categoría son obligatorios.");
-            return;
-        }
-        Cliente c = new Cliente(0, nombre, apellido, txtReferencia.getText(), dpCumpleaños.getValue(),
-            cbEsPadreOMadre.isSelected(), txtGustosMusicales.getText(), txtGustosFutbol.getText(),
-            txtGustosComidas.getText(), txtRedesSociales.getText(), txtTelefono.getText(),
-            txtEmail.getText(), txtDireccion.getText(), txtOcupacion.getText(),
-            cbFueCliente.isSelected(), dpFechaCompraVenta.getValue(), categoria,
-            cbDeseaContacto.isSelected(), dpProximoContacto.getValue(), txtTemasConversacion.getText(),
-            txtLugaresVisita.getText(), txtDatosAdicionales.getText(),
-            txtReferidoPor.getText(), txtRefirioA.getText()
-        );
-        try {
-            ClienteDAO.agregarCliente(c);
-            limpiarCampos();
-            listarClientes();
-        } catch (SQLException ex) {
-            ErrorHandler.showError("Error", ex.getMessage());
-        }
+    public void aplicarFiltros(String categoria, String nombre, String apellido) {
+        tableClientes.setItems(clientes.filtered(c ->
+            (categoria.isEmpty() || c.getCategoria().equals(categoria)) &&
+            (nombre.isEmpty() || c.getNombre().toLowerCase().contains(nombre.toLowerCase())) &&
+            (apellido.isEmpty() || c.getApellido().toLowerCase().contains(apellido.toLowerCase()))
+        ));
     }
 
-    public void limpiarCampos() {
-        txtNombre.clear();
-        txtApellido.clear();
-        txtReferencia.clear();
-        txtCategoria.clear();
-        dpCumpleaños.setValue(null);
-        cbEsPadreOMadre.setSelected(false);
-        txtGustosMusicales.clear();
-        txtGustosFutbol.clear();
-        txtGustosComidas.clear();
-        txtRedesSociales.clear();
-        txtTelefono.clear();
-        txtEmail.clear();
-        txtDireccion.clear();
-        txtOcupacion.clear();
-        cbFueCliente.setSelected(false);
-        dpFechaCompraVenta.setValue(null);
-        cbDeseaContacto.setSelected(false);
-        dpProximoContacto.setValue(null);
-        txtTemasConversacion.clear();
-        txtLugaresVisita.clear();
-        txtDatosAdicionales.clear();
-        txtReferidoPor.clear();
-        txtRefirioA.clear();
+    public void mostrarFormularioModal() {
+        Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Nuevo Cliente");
+
+        // Aquí puedes construir el formulario con ScrollPane si lo deseas
+        VBox form = new VBox(10);
+        form.setPadding(new Insets(10));
+        // Agrega tus controles de formulario (TextField, DatePicker, CheckBox, etc.) y un botón para guardar
+        ScrollPane scroll = new ScrollPane(form);
+        scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
+
+        Scene scene = new Scene(scroll, 400, 600);
+        dialog.setScene(scene);
+        dialog.showAndWait();
     }
 
-    private void cargarParaEdicion(Cliente cliente) {
-        // cargar datos en formulario...
-    }
-
-    private void eliminarConfirmacion(Cliente cliente) {
-        Alert a = new Alert(Alert.AlertType.CONFIRMATION, "¿Eliminar " + cliente.getNombre() + "?",
-            ButtonType.OK, ButtonType.CANCEL);
-        a.showAndWait().ifPresent(b -> {
-            if (b == ButtonType.OK) {
-                try {
-                    ClienteDAO.eliminarCliente(cliente.getId());
-                    listarClientes();
-                } catch (SQLException ex) {
-                    ErrorHandler.showError("Error", ex.getMessage());
-                }
-            }
-        });
-    }
-
-    private void mostrarDetalle(Cliente cliente) {
+    public void mostrarDetalle(Cliente cliente) {
         Stage s = new Stage();
         s.initModality(Modality.APPLICATION_MODAL);
         s.setTitle("Detalle Cliente");
@@ -267,12 +173,22 @@ public class ClienteController {
         s.showAndWait();
     }
 
-    public void mostrarBusqueda() {
-        // implementación de búsqueda...
+    private void cargarParaEdicion(Cliente cliente) {
+        // Implementa la lógica para cargar los datos en el formulario modal
     }
 
-    public void mostrarContactosPorCategoria() {
-        // simplemente reusar la tabla
-        listarClientes();
+    private void eliminarConfirmacion(Cliente cliente) {
+        Alert a = new Alert(Alert.AlertType.CONFIRMATION, "¿Eliminar " + cliente.getNombre() + "?",
+            ButtonType.OK, ButtonType.CANCEL);
+        a.showAndWait().ifPresent(b -> {
+            if (b == ButtonType.OK) {
+                try {
+                    ClienteDAO.eliminarCliente(cliente.getId());
+                    listarClientes();
+                } catch (SQLException ex) {
+                    ErrorHandler.showError("Error", ex.getMessage());
+                }
+            }
+        });
     }
 }

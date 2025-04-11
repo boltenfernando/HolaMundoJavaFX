@@ -7,12 +7,12 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
+import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import model.Cliente;
 import service.RecordatorioService;
@@ -24,47 +24,53 @@ public class ClienteApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        // Inicialización de base de datos y recordatorios
+        // Inicialización DB y recordatorios
         TestSQLite.createTable();
         TestSQLite.verificarYAgregarColumnaCumpleaños();
         RecordatorioService.mostrarRecordatorios();
 
-        // Crear el controlador
         controller = new ClienteController(clientes);
 
-        // Menu superior
-        MenuBar menuBar = new MenuBar();
-        Menu menuOpciones = new Menu("Opciones");
-        MenuItem miCrear = new MenuItem("Crear nuevo contacto");
-        MenuItem miBuscar = new MenuItem("Buscar contacto");
-        MenuItem miVerBase = new MenuItem("Ver base");
-        menuOpciones.getItems().addAll(miCrear, miBuscar, miVerBase);
-        menuBar.getMenus().add(menuOpciones);
+        // Botón Nuevo Cliente (izquierda)
+        Button btnNuevo = new Button("Nuevo Cliente");
+        btnNuevo.setOnAction(e -> controller.mostrarFormularioModal());
 
-        miCrear.setOnAction(e -> controller.mostrarFormularioNuevo());
-        miBuscar.setOnAction(e -> controller.mostrarBusqueda());
-        miVerBase.setOnAction(e -> controller.mostrarContactosPorCategoria());
+        VBox panelIzquierdo = new VBox(btnNuevo);
+        panelIzquierdo.setPadding(new Insets(10));
+        panelIzquierdo.setSpacing(10);
+
+        // Panel central: filtros + tabla
+        ChoiceBox<String> cbCategoria = new ChoiceBox<>();
+        cbCategoria.getItems().addAll("","A+","A","B","C","D");
+        cbCategoria.setValue("");
+        TextField tfNombre = new TextField(); tfNombre.setPromptText("Nombre");
+        TextField tfApellido = new TextField(); tfApellido.setPromptText("Apellido");
+        Button btnFiltrar = new Button("Filtrar");
+        btnFiltrar.setOnAction(e -> controller.aplicarFiltros(cbCategoria.getValue(), tfNombre.getText(), tfApellido.getText()));
+
+        HBox filtros = new HBox(10,
+            new Label("Categoría:"), cbCategoria,
+            new Label("Nombre:"), tfNombre,
+            new Label("Apellido:"), tfApellido,
+            btnFiltrar
+        );
+        filtros.setPadding(new Insets(10));
+
+        ScrollPane scrollTabla = new ScrollPane(controller.obtenerTablaClientes());
+        scrollTabla.setFitToWidth(true);
+        scrollTabla.setFitToHeight(true);
+
+        VBox panelCentral = new VBox(filtros, scrollTabla);
+        VBox.setVgrow(scrollTabla, Priority.ALWAYS);
+
+        // Panel derecho: recordatorios
+        VBox panelDerecho = controller.obtenerPanelRecordatoriosConLupa();
+        panelDerecho.setPadding(new Insets(10));
 
         // Layout principal
         BorderPane root = new BorderPane();
-        root.setTop(menuBar);
-
-        // Panel izquierdo con scroll
-        VBox contenidoIzquierdo = new VBox(10,
-            controller.obtenerPanelFormulario(),
-            controller.obtenerTablaClientes()
-        );
-        contenidoIzquierdo.setPadding(new Insets(10));
-
-        ScrollPane scrollIzquierdo = new ScrollPane(contenidoIzquierdo);
-        scrollIzquierdo.setFitToWidth(true);
-        scrollIzquierdo.setFitToHeight(true);
-
-        root.setLeft(scrollIzquierdo);
-
-        // Panel derecho (recordatorios + lupa)
-        VBox panelDerecho = controller.obtenerPanelRecordatoriosConLupa();
-        panelDerecho.setPadding(new Insets(10));
+        root.setLeft(panelIzquierdo);
+        root.setCenter(panelCentral);
         root.setRight(panelDerecho);
 
         Scene scene = new Scene(root);
@@ -73,7 +79,6 @@ public class ClienteApp extends Application {
         primaryStage.setMaximized(true);
         primaryStage.show();
 
-        // Listar clientes al iniciar
         controller.listarClientes();
     }
 
