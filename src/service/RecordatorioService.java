@@ -1,15 +1,16 @@
 package service;
 
 import dao.ClienteDAO;
-import db.TestSQLite;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Label;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.VBox;
 import model.Cliente;
 import util.ErrorHandler;
+import db.TestSQLite;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -133,8 +134,13 @@ public class RecordatorioService {
                     vbox.getChildren().add(label);
                 }
             }
-        } catch (SQLException e) {
-            ErrorHandler.showError("Error", "No se pudo cargar panel de recordatorios: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            Alert a = new Alert(AlertType.WARNING);
+            a.setTitle("⚠️ Recordatorios");
+            a.setHeaderText("No se pudo cargar el panel de recordatorios");
+            a.setContentText(e.getMessage());
+            a.showAndWait();
         }
         return vbox;
     }

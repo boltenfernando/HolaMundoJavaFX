@@ -7,8 +7,15 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import model.Cliente;
 import service.RecordatorioService;
@@ -21,7 +28,7 @@ public class ClienteApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         TestSQLite.createTable();
-        TestSQLite.verificarYAgregarColumnaCumpleaños();
+        TestSQLite.verificarYAgregarColumnas();
         RecordatorioService.mostrarRecordatorios();
 
         controller = new ClienteController(clientes);

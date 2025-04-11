@@ -1,113 +1,105 @@
 package db;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 public class TestSQLite {
-    // URL de la base de datos (en el directorio actual)
-    private static final String URL = "jdbc:sqlite:mi_base.db";
+    private static final String URL = "jdbc:sqlite:clientes.db";
 
-    // Método para establecer conexión con la base de datos
-    public static Connection connect() {
-        try {
-            Class.forName("org.sqlite.JDBC"); // Cargar el driver JDBC
-            return DriverManager.getConnection(URL); // Conexión a SQLite
-        } catch (ClassNotFoundException e) {
-            System.out.println("No se encontró el driver JDBC: " + e.getMessage());
-            return null;
-        } catch (SQLException e) {
-            System.out.println("Error al conectar con SQLite: " + e.getMessage());
-            return null;
-        }
+    public static Connection connect() throws SQLException {
+        return java.sql.DriverManager.getConnection(URL);
     }
 
-    // Método para crear la tabla 'clientes' con campos extendidos
     public static void createTable() {
-        String sql = "CREATE TABLE IF NOT EXISTS clientes ("
-                   + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                   + "nombre TEXT NOT NULL, "
-                   + "apellido TEXT NOT NULL, "
-                   + "referencia TEXT, "
-                   + "cumpleaños DATE, "
-                   + "esPadreOMadre INTEGER, "
-                   + "gustosMusicales TEXT, "
-                   + "gustosFutbol TEXT, "
-                   + "gustosComidas TEXT, "
-                   + "redesSociales TEXT, "
-                   + "telefono TEXT, "
-                   + "email TEXT, "
-                   + "direccion TEXT NOT NULL, "
-                   + "ocupacion TEXT, "
-                   + "fueCliente INTEGER, "
-                   + "fechaCompraVenta DATE, "
-                   + "categoria TEXT, "
-                   + "deseaContacto INTEGER, "
-                   + "proximoContacto DATE, "
-                   + "temasConversacion TEXT, "
-                   + "lugaresVisita TEXT, "
-                   + "datosAdicionales TEXT, "
-                   + "referidoPor TEXT, "
-                   + "refirioA TEXT"
-                   + ");";
-        try (Connection conn = connect();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-            System.out.println("Tabla 'clientes' creada o ya existe.");
+        String sql = "CREATE TABLE IF NOT EXISTS clientes (" +
+            "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+            "nombre TEXT," +
+            "apellido TEXT," +
+            "referencia TEXT," +
+            "proximoContacto DATE," +
+            "direccion TEXT," +
+            "localidad TEXT," +
+            "cumpleaños DATE," +
+            "datosPersonales TEXT," +
+            "datosLaborales TEXT," +
+            "datosVenta TEXT," +
+            "datosCompra TEXT," +
+            "deseaContacto BOOLEAN," +
+            "fueCliente BOOLEAN," +
+            "fechaCompraVenta DATE," +
+            "esReferidor BOOLEAN," +
+            "refirioA TEXT," +
+            "referidoPor TEXT," +
+            "esPadre BOOLEAN," +
+            "esMadre BOOLEAN," +
+            "nombreHijos TEXT," +
+            "telefono TEXT," +
+            "redesSociales TEXT," +
+            "email TEXT," +
+            "ocupacion TEXT," +
+            "gustosMusicales TEXT," +
+            "clubFutbol TEXT," +
+            "gustoBebidas TEXT," +
+            "preferenciasComida TEXT," +
+            "categoria TEXT" +
+        ");";
+        try (Connection conn = connect(); Statement st = conn.createStatement()) {
+            st.execute(sql);
         } catch (SQLException e) {
-            System.out.println("Error al crear la tabla: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    // Método para limpiar la tabla (opcional)
-    public static void clearTable() {
-        String sql = "DELETE FROM clientes";
+    /** Añade una columna si no existe ya en la tabla */
+    public static void addColumnIfNotExists(String columnName, String columnDef) {
         try (Connection conn = connect();
-             Statement stmt = conn.createStatement()) {
-            int rowsAffected = stmt.executeUpdate(sql);
-            System.out.println("Se eliminaron " + rowsAffected + " registros de la tabla 'clientes'.");
-        } catch (SQLException e) {
-            System.out.println("Error al limpiar la tabla: " + e.getMessage());
-        }
-    }
-
-    // Método para eliminar la tabla (opcional)
-    public static void dropTable() {
-        String sql = "DROP TABLE IF EXISTS clientes";
-        try (Connection conn = connect();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-            System.out.println("Tabla 'clientes' eliminada.");
-        } catch (SQLException e) {
-            System.out.println("Error al eliminar la tabla: " + e.getMessage());
-        }
-    }
-    
-    public static void verificarYAgregarColumnaCumpleaños() {
-        String checkColumnSQL = "PRAGMA table_info(clientes);";
-        boolean columnaExiste = false;
-        try (Connection conn = connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(checkColumnSQL)) {
+             Statement st = conn.createStatement()) {
+            // SQLite no soporta ALTER TABLE ADD COLUMN IF NOT EXISTS, así que comprobamos manualmente
+            ResultSet rs = st.executeQuery("PRAGMA table_info(clientes);");
+            boolean found = false;
             while (rs.next()) {
-                String columnName = rs.getString("name");
-                if ("cumpleaños".equals(columnName)) {
-                    columnaExiste = true;
+                if (columnName.equalsIgnoreCase(rs.getString("name"))) {
+                    found = true;
                     break;
                 }
             }
-            if (!columnaExiste) {
-                System.out.println("La columna 'cumpleaños' no existe. Se agregará ahora...");
-                String alterTableSQL = "ALTER TABLE clientes ADD COLUMN cumpleaños DATE;";
-                stmt.execute(alterTableSQL);
-                System.out.println("Columna 'cumpleaños' agregada correctamente.");
-            } else {
-                System.out.println("La columna 'cumpleaños' ya existe.");
+            if (!found) {
+                st.execute("ALTER TABLE clientes ADD COLUMN " + columnName + " " + columnDef + ";");
             }
         } catch (SQLException e) {
-            System.out.println("Error verificando/agregando la columna 'cumpleaños': " + e.getMessage());
+            e.printStackTrace();
         }
+    }
+
+    public static void verificarYAgregarColumnas() {
+        // columnas existentes
+        addColumnIfNotExists("proximoContacto", "DATE");
+        addColumnIfNotExists("direccion", "TEXT");
+        addColumnIfNotExists("localidad", "TEXT");
+        addColumnIfNotExists("cumpleaños", "DATE");
+        addColumnIfNotExists("datosPersonales", "TEXT");
+        addColumnIfNotExists("datosLaborales", "TEXT");
+        addColumnIfNotExists("datosVenta", "TEXT");
+        addColumnIfNotExists("datosCompra", "TEXT");
+        addColumnIfNotExists("deseaContacto", "BOOLEAN");
+        addColumnIfNotExists("fueCliente", "BOOLEAN");
+        addColumnIfNotExists("fechaCompraVenta", "DATE");
+        addColumnIfNotExists("esReferidor", "BOOLEAN");
+        addColumnIfNotExists("refirioA", "TEXT");
+        addColumnIfNotExists("referidoPor", "TEXT");
+        addColumnIfNotExists("esPadre", "BOOLEAN");
+        addColumnIfNotExists("esMadre", "BOOLEAN");
+        addColumnIfNotExists("nombreHijos", "TEXT");
+        addColumnIfNotExists("telefono", "TEXT");
+        addColumnIfNotExists("redesSociales", "TEXT");
+        addColumnIfNotExists("email", "TEXT");
+        addColumnIfNotExists("ocupacion", "TEXT");
+        addColumnIfNotExists("gustosMusicales", "TEXT");
+        addColumnIfNotExists("clubFutbol", "TEXT");
+        addColumnIfNotExists("gustoBebidas", "TEXT");
+        addColumnIfNotExists("preferenciasComida", "TEXT");
+        addColumnIfNotExists("categoria", "TEXT");
     }
 }
