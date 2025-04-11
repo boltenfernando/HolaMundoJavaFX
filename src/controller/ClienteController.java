@@ -12,19 +12,82 @@ import javafx.stage.Stage;
 import model.Cliente;
 import service.RecordatorioService;
 import util.ErrorHandler;
+import util.LoggerUtil;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.logging.Logger;
 
 public class ClienteController {
     private final ObservableList<Cliente> clientes;
     private TableView<Cliente> tableClientes;
     private VBox panelRecordatorios;
 
+    // Controles del formulario (reutilizables)
+    private TextField txtNombre, txtApellido, txtReferencia, txtCategoria;
+    private DatePicker dpCumpleaños;
+    private CheckBox cbEsPadreOMadre;
+    private TextField txtGustosMusicales, txtGustosFutbol, txtGustosComidas, txtRedesSociales;
+    private TextField txtTelefono, txtEmail, txtDireccion, txtOcupacion;
+    private CheckBox cbFueCliente, cbDeseaContacto;
+    private DatePicker dpFechaCompraVenta, dpProximoContacto;
+    private TextField txtTemasConversacion, txtLugaresVisita, txtDatosAdicionales, txtReferidoPor, txtRefirioA;
+    private Button btnAgregar, btnBuscarRecordatorios;
+
+    private VBox panelFormulario; // se arma una vez
+
+    private static final Logger logger = LoggerUtil.getLogger();
+
     public ClienteController(ObservableList<Cliente> clientes) {
         this.clientes = clientes;
+        inicializarControles();
         configurarTabla();
         configurarRecordatorios();
+        armarPanelFormulario();
+    }
+
+    private void inicializarControles() {
+        txtNombre = new TextField(); txtNombre.setPromptText("Nombre");
+        txtApellido = new TextField(); txtApellido.setPromptText("Apellido");
+        txtCategoria = new TextField(); txtCategoria.setPromptText("Categoría");
+        txtReferencia = new TextField(); txtReferencia.setPromptText("Referencia");
+        dpCumpleaños = new DatePicker();
+        cbEsPadreOMadre = new CheckBox("Es padre/madre");
+        txtGustosMusicales = new TextField(); txtGustosMusicales.setPromptText("Gustos musicales");
+        txtGustosFutbol = new TextField(); txtGustosFutbol.setPromptText("Gustos fútbol");
+        txtGustosComidas = new TextField(); txtGustosComidas.setPromptText("Gustos comidas");
+        txtRedesSociales = new TextField(); txtRedesSociales.setPromptText("Redes sociales");
+        txtTelefono = new TextField(); txtTelefono.setPromptText("Teléfono");
+        txtEmail = new TextField(); txtEmail.setPromptText("Email");
+        txtDireccion = new TextField(); txtDireccion.setPromptText("Dirección");
+        txtOcupacion = new TextField(); txtOcupacion.setPromptText("Ocupación");
+        cbFueCliente = new CheckBox("Fue cliente");
+        dpFechaCompraVenta = new DatePicker();
+        cbDeseaContacto = new CheckBox("Desea contacto");
+        dpProximoContacto = new DatePicker();
+        txtTemasConversacion = new TextField(); txtTemasConversacion.setPromptText("Temas conversación");
+        txtLugaresVisita = new TextField(); txtLugaresVisita.setPromptText("Lugares visita");
+        txtDatosAdicionales = new TextField(); txtDatosAdicionales.setPromptText("Datos adicionales");
+        txtReferidoPor = new TextField(); txtReferidoPor.setPromptText("Referido por");
+        txtRefirioA = new TextField(); txtRefirioA.setPromptText("Refirió a");
+
+        btnAgregar = new Button("Guardar");
+        btnAgregar.setOnAction(e -> {
+            guardarCliente();
+        });
+    }
+
+    private void armarPanelFormulario() {
+        panelFormulario = new VBox(10,
+            new Label("Formulario Cliente"),
+            txtCategoria, txtNombre, txtApellido, txtReferencia, dpCumpleaños, cbEsPadreOMadre,
+            txtGustosMusicales, txtGustosFutbol, txtGustosComidas, txtRedesSociales,
+            txtTelefono, txtEmail, txtDireccion, txtOcupacion, cbFueCliente,
+            dpFechaCompraVenta, cbDeseaContacto, dpProximoContacto,
+            txtTemasConversacion, txtLugaresVisita, txtDatosAdicionales, txtReferidoPor, txtRefirioA,
+            btnAgregar
+        );
+        panelFormulario.setPadding(new Insets(10));
     }
 
     private void configurarTabla() {
@@ -41,43 +104,31 @@ public class ClienteController {
         TableColumn<Cliente, String> colRef = new TableColumn<>("Referencia");
         colRef.setCellValueFactory(new PropertyValueFactory<>("referencia"));
 
-        // Columna VER
         TableColumn<Cliente, Void> colVer = new TableColumn<>("VER");
         colVer.setCellFactory(tc -> new TableCell<>() {
             private final Button btn = new Button("VER");
-            {
-                btn.setOnAction(e -> mostrarDetalle(getTableView().getItems().get(getIndex())));
-            }
-            @Override
-            protected void updateItem(Void item, boolean empty) {
+            { btn.setOnAction(e -> mostrarDetalle(getTableView().getItems().get(getIndex()))); }
+            @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : btn);
             }
         });
 
-        // Columna EDITAR
         TableColumn<Cliente, Void> colEditar = new TableColumn<>("EDITAR");
         colEditar.setCellFactory(tc -> new TableCell<>() {
             private final Button btn = new Button("EDITAR");
-            {
-                btn.setOnAction(e -> cargarParaEdicion(getTableView().getItems().get(getIndex())));
-            }
-            @Override
-            protected void updateItem(Void item, boolean empty) {
+            { btn.setOnAction(e -> cargarParaEdicion(getTableView().getItems().get(getIndex()))); }
+            @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : btn);
             }
         });
 
-        // Columna ELIMINAR
         TableColumn<Cliente, Void> colEliminar = new TableColumn<>("ELIMINAR");
         colEliminar.setCellFactory(tc -> new TableCell<>() {
             private final Button btn = new Button("ELIMINAR");
-            {
-                btn.setOnAction(e -> eliminarConfirmacion(getTableView().getItems().get(getIndex())));
-            }
-            @Override
-            protected void updateItem(Void item, boolean empty) {
+            { btn.setOnAction(e -> eliminarConfirmacion(getTableView().getItems().get(getIndex()))); }
+            @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : btn);
             }
@@ -124,11 +175,7 @@ public class ClienteController {
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.setTitle("Nuevo Cliente");
 
-        // Aquí puedes construir el formulario con ScrollPane si lo deseas
-        VBox form = new VBox(10);
-        form.setPadding(new Insets(10));
-        // Agrega tus controles de formulario (TextField, DatePicker, CheckBox, etc.) y un botón para guardar
-        ScrollPane scroll = new ScrollPane(form);
+        ScrollPane scroll = new ScrollPane(panelFormulario);
         scroll.setFitToWidth(true);
         scroll.setFitToHeight(true);
 
@@ -137,7 +184,78 @@ public class ClienteController {
         dialog.showAndWait();
     }
 
-    public void mostrarDetalle(Cliente cliente) {
+    private void guardarCliente() {
+        String nombre = txtNombre.getText();
+        String apellido = txtApellido.getText();
+        String categoria = txtCategoria.getText();
+        if (nombre.isEmpty() || apellido.isEmpty() || categoria.isEmpty()) {
+            ErrorHandler.showError("Error", "Nombre, Apellido y Categoría son obligatorios.");
+            return;
+        }
+        Cliente c = new Cliente(0, nombre, apellido, txtReferencia.getText(), dpCumpleaños.getValue(),
+            cbEsPadreOMadre.isSelected(), txtGustosMusicales.getText(), txtGustosFutbol.getText(),
+            txtGustosComidas.getText(), txtRedesSociales.getText(), txtTelefono.getText(),
+            txtEmail.getText(), txtDireccion.getText(), txtOcupacion.getText(),
+            cbFueCliente.isSelected(), dpFechaCompraVenta.getValue(), categoria,
+            cbDeseaContacto.isSelected(), dpProximoContacto.getValue(), txtTemasConversacion.getText(),
+            txtLugaresVisita.getText(), txtDatosAdicionales.getText(),
+            txtReferidoPor.getText(), txtRefirioA.getText()
+        );
+        try {
+            ClienteDAO.agregarCliente(c);
+            limpiarCampos();
+            listarClientes();
+        } catch (SQLException ex) {
+            ErrorHandler.showError("Error", ex.getMessage());
+        }
+    }
+
+    public void limpiarCampos() {
+        txtNombre.clear();
+        txtApellido.clear();
+        txtReferencia.clear();
+        txtCategoria.clear();
+        dpCumpleaños.setValue(null);
+        cbEsPadreOMadre.setSelected(false);
+        txtGustosMusicales.clear();
+        txtGustosFutbol.clear();
+        txtGustosComidas.clear();
+        txtRedesSociales.clear();
+        txtTelefono.clear();
+        txtEmail.clear();
+        txtDireccion.clear();
+        txtOcupacion.clear();
+        cbFueCliente.setSelected(false);
+        dpFechaCompraVenta.setValue(null);
+        cbDeseaContacto.setSelected(false);
+        dpProximoContacto.setValue(null);
+        txtTemasConversacion.clear();
+        txtLugaresVisita.clear();
+        txtDatosAdicionales.clear();
+        txtReferidoPor.clear();
+        txtRefirioA.clear();
+    }
+
+    private void cargarParaEdicion(Cliente cliente) {
+        // cargar datos en formulario...
+    }
+
+    private void eliminarConfirmacion(Cliente cliente) {
+        Alert a = new Alert(Alert.AlertType.CONFIRMATION, "¿Eliminar " + cliente.getNombre() + "?",
+            ButtonType.OK, ButtonType.CANCEL);
+        a.showAndWait().ifPresent(b -> {
+            if (b == ButtonType.OK) {
+                try {
+                    ClienteDAO.eliminarCliente(cliente.getId());
+                    listarClientes();
+                } catch (SQLException ex) {
+                    ErrorHandler.showError("Error", ex.getMessage());
+                }
+            }
+        });
+    }
+
+    private void mostrarDetalle(Cliente cliente) {
         Stage s = new Stage();
         s.initModality(Modality.APPLICATION_MODAL);
         s.setTitle("Detalle Cliente");
@@ -171,24 +289,5 @@ public class ClienteController {
         Scene sc = new Scene(v, 400, 600);
         s.setScene(sc);
         s.showAndWait();
-    }
-
-    private void cargarParaEdicion(Cliente cliente) {
-        // Implementa la lógica para cargar los datos en el formulario modal
-    }
-
-    private void eliminarConfirmacion(Cliente cliente) {
-        Alert a = new Alert(Alert.AlertType.CONFIRMATION, "¿Eliminar " + cliente.getNombre() + "?",
-            ButtonType.OK, ButtonType.CANCEL);
-        a.showAndWait().ifPresent(b -> {
-            if (b == ButtonType.OK) {
-                try {
-                    ClienteDAO.eliminarCliente(cliente.getId());
-                    listarClientes();
-                } catch (SQLException ex) {
-                    ErrorHandler.showError("Error", ex.getMessage());
-                }
-            }
-        });
     }
 }
