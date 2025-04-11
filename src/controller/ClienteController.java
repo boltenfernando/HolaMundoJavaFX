@@ -248,33 +248,56 @@ public class ClienteController {
     }
 
     public void mostrarFormularioModal(Cliente cliente) {
-        // ... mismo que antes ...
+        System.out.println("DEBUG: abrir formulario modal");
+        Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle(cliente == null ? "Nuevo Cliente" : "Editar Cliente");
+
+        // Precarga si edición
+        if (cliente != null) {
+            // ... precarga campos ...
+        } else {
+            limpiarCampos();
+        }
+
+        btnGuardar.setText(cliente == null ? "Guardar" : "Actualizar");
+        btnGuardar.setOnAction(e -> {
+            boolean ok = cliente == null ? guardarCliente() : actualizarCliente(cliente);
+            if (ok) dialog.close();
+        });
+
+        ScrollPane scroll = new ScrollPane(panelFormulario);
+        scroll.setFitToWidth(true);
+
+        Scene scene = new Scene(scroll, 450, 700);
+        dialog.setScene(scene);
+        dialog.showAndWait();
     }
 
     private boolean guardarCliente() {
-        // ... mismo que antes ...
+        // ... igual que antes ...
         return true;
     }
 
     private boolean actualizarCliente(Cliente cliente) {
-        // ... mismo que antes ...
+        // ... igual que antes ...
         return true;
     }
 
     private Cliente buildClienteFromForm(int id) {
-        // ... mismo que antes ...
-        return new Cliente(/* todos los parámetros */);
+        // ... igual que antes ...
+        return new Cliente();
     }
 
     public void limpiarCampos() {
-        // ... mismo que antes ...
+        // ... igual que antes ...
     }
 
     private void eliminarConfirmacion(Cliente cliente) {
-        // ... mismo que antes ...
+        // ... igual que antes ...
     }
 
     private void mostrarDetalle(Cliente cliente) {
-        // ... mismo que antes ...
+        // ... igual que antes ...
     }
 }
