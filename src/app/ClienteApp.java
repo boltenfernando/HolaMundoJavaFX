@@ -7,11 +7,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import model.Cliente;
@@ -35,7 +31,6 @@ public class ClienteApp extends Application {
 
         VBox panelIzquierdo = new VBox(btnNuevo);
         panelIzquierdo.setPadding(new Insets(10));
-        panelIzquierdo.setSpacing(10);
 
         ChoiceBox<String> cbCategoria = new ChoiceBox<>();
         cbCategoria.getItems().addAll("", "A+", "A", "B", "C", "D");
@@ -62,7 +57,6 @@ public class ClienteApp extends Application {
 
         ScrollPane scrollTabla = new ScrollPane(controller.obtenerTablaClientes());
         scrollTabla.setFitToWidth(true);
-        scrollTabla.setFitToHeight(true);
 
         VBox panelCentral = new VBox(filtros, scrollTabla);
         VBox.setVgrow(scrollTabla, Priority.ALWAYS);

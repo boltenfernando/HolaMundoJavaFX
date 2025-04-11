@@ -1,10 +1,13 @@
 package service;
 
+import dao.ClienteDAO;
 import db.TestSQLite;
-import util.ErrorHandler;
-import javafx.geometry.Insets;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
+import model.Cliente;
+import util.ErrorHandler;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,97 +19,123 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RecordatorioService {
+    private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("dd/MM");
 
     public static void mostrarRecordatorios() {
         LocalDate hoy = LocalDate.now();
-        LocalDate semanaFutura = hoy.plusDays(7);
-        String sql = "SELECT nombre, apellido, cumpleaños FROM clientes " +
-                     "WHERE strftime('%m-%d', cumpleaños) BETWEEN strftime('%m-%d', ?) AND strftime('%m-%d', ?)";
-        StringBuilder recordatoriosHoy = new StringBuilder();
-        StringBuilder recordatoriosSemana = new StringBuilder();
+        LocalDate fin = hoy.plusDays(7);
 
+        List<String> mensajes = new ArrayList<>();
+        mensajes.addAll(fetchMensajes("cumpleaños", "🎂 Hoy cumple años %s %s!", "📅 Cumpleaños de %s %s el %s.", hoy, fin));
+        mensajes.addAll(fetchMensajes("fechaCompraVenta", "🏡 Hoy aniversario de %s %s!", "📅 Aniversario de %s %s el %s.", hoy, fin));
+        mensajes.addAll(fetchMensajesFecha("proximoContacto", "📞 Hoy contactar a %s %s!", "⏰ Contactar a %s %s el %s.", hoy, fin));
+
+        String cuerpo = mensajes.isEmpty()
+            ? "No hay recordatorios en los próximos 7 días."
+            : String.join("\n", mensajes);
+
+        Alert a = new Alert(AlertType.INFORMATION);
+        a.setTitle("🔔 Recordatorios próximos");
+        a.setHeaderText(null);
+        a.setContentText(cuerpo);
+        a.showAndWait();
+    }
+
+    private static List<String> fetchMensajes(String campo, String hoyFmt, String proxFmt, LocalDate hoy, LocalDate fin) {
+        List<String> res = new ArrayList<>();
+        String sql = String.format(
+            "SELECT nombre, apellido, %s FROM clientes " +
+            "WHERE %s IS NOT NULL AND strftime('%%m-%%d', %s) BETWEEN strftime('%%m-%%d', ?) AND strftime('%%m-%%d', ?)",
+            campo, campo, campo);
         try (Connection conn = TestSQLite.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, hoy.toString());
-            pstmt.setString(2, semanaFutura.toString());
-            ResultSet rs = pstmt.executeQuery();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, hoy.toString());
+            ps.setString(2, fin.toString());
+            ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                String nombre = rs.getString("nombre");
-                String apellido = rs.getString("apellido");
-                String fechaCumpleañosStr = rs.getString("cumpleaños");
-                LocalDate fechaCumpleaños = (fechaCumpleañosStr != null) ? LocalDate.parse(fechaCumpleañosStr) : null;
-                if (fechaCumpleaños != null) {
-                    if (fechaCumpleaños.equals(hoy)) {
-                        recordatoriosHoy.append("🎉 Hoy es el cumpleaños de ")
-                            .append(nombre).append(" ").append(apellido).append("!\n");
-                    } else {
-                        recordatoriosSemana.append("📅 Esta semana cumple ")
-                            .append(nombre).append(" ").append(apellido)
-                            .append(" el ").append(fechaCumpleaños.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-                            .append(".\n");
-                    }
+                String nom = rs.getString("nombre");
+                String ape = rs.getString("apellido");
+                LocalDate fecha = LocalDate.parse(rs.getString(campo));
+                String fechaFmt = fecha.format(FORMAT);
+                if (fecha.equals(hoy)) {
+                    res.add(String.format(hoyFmt, nom, ape));
+                } else {
+                    res.add(String.format(proxFmt, nom, ape, fechaFmt));
                 }
             }
-            String mensajeFinal = "";
-            if (recordatoriosHoy.length() > 0) {
-                mensajeFinal += recordatoriosHoy.toString() + "\n";
-            }
-            if (recordatoriosSemana.length() > 0) {
-                mensajeFinal += recordatoriosSemana.toString();
-            }
-            if (mensajeFinal.isEmpty()) {
-                mensajeFinal = "Hoy no hay cumpleaños ni recordatorios pendientes.";
-            }
-            ErrorHandler.showInfo("🎂 Recordatorios de Cumpleaños", mensajeFinal);
         } catch (SQLException e) {
             ErrorHandler.showError("Error", "Error obteniendo recordatorios: " + e.getMessage());
         }
+        return res;
     }
 
-    private static List<String> obtenerRecordatoriosComoLista() {
-        List<String> lista = new ArrayList<>();
-        LocalDate hoy = LocalDate.now();
-        LocalDate semanaFutura = hoy.plusDays(7);
-        String sql = "SELECT nombre, apellido, cumpleaños FROM clientes " +
-                     "WHERE strftime('%m-%d', cumpleaños) BETWEEN strftime('%m-%d', ?) AND strftime('%m-%d', ?)";
+    private static List<String> fetchMensajesFecha(String campo, String hoyFmt, String proxFmt, LocalDate hoy, LocalDate fin) {
+        List<String> res = new ArrayList<>();
+        String sql = String.format(
+            "SELECT nombre, apellido, %s FROM clientes " +
+            "WHERE %s IS NOT NULL AND date(%s) BETWEEN date(?) AND date(?)",
+            campo, campo, campo);
         try (Connection conn = TestSQLite.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, hoy.toString());
-            pstmt.setString(2, semanaFutura.toString());
-            ResultSet rs = pstmt.executeQuery();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, hoy.toString());
+            ps.setString(2, fin.toString());
+            ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                String nombre = rs.getString("nombre");
-                String apellido = rs.getString("apellido");
-                String fechaCumpleañosStr = rs.getString("cumpleaños");
-                LocalDate fechaCumpleaños = (fechaCumpleañosStr != null) ? LocalDate.parse(fechaCumpleañosStr) : null;
-                if (fechaCumpleaños != null) {
-                    if (fechaCumpleaños.equals(hoy)) {
-                        lista.add("🎉 Hoy cumple: " + nombre + " " + apellido);
-                    } else {
-                        String fechaFormateada = fechaCumpleaños.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                        lista.add("📅 Cumple " + nombre + " " + apellido + " el " + fechaFormateada);
-                    }
+                String nom = rs.getString("nombre");
+                String ape = rs.getString("apellido");
+                LocalDate fecha = LocalDate.parse(rs.getString(campo));
+                String fechaFmt = fecha.format(FORMAT);
+                if (fecha.equals(hoy)) {
+                    res.add(String.format(hoyFmt, nom, ape));
+                } else {
+                    res.add(String.format(proxFmt, nom, ape, fechaFmt));
                 }
             }
-            if (lista.isEmpty()) {
-                lista.add("Hoy no hay cumpleaños ni recordatorios pendientes.");
-            }
         } catch (SQLException e) {
-            lista.clear();
-            lista.add("Error obteniendo recordatorios: " + e.getMessage());
+            ErrorHandler.showError("Error", "Error obteniendo recordatorios: " + e.getMessage());
         }
-        return lista;
+        return res;
+    }
+
+    public static List<String> getRecordatorios(Cliente c) {
+        List<String> recs = new ArrayList<>();
+        LocalDate hoy = LocalDate.now();
+        LocalDate fin = hoy.plusDays(7);
+
+        if (c.getCumpleaños() != null) {
+            LocalDate d = c.getCumpleaños().withYear(hoy.getYear());
+            if (!d.isBefore(hoy) && !d.isAfter(fin)) {
+                recs.add("🎂 " + d.format(FORMAT));
+            }
+        }
+        if (c.getFechaCompraVenta() != null) {
+            LocalDate d = c.getFechaCompraVenta().withYear(hoy.getYear());
+            if (!d.isBefore(hoy) && !d.isAfter(fin)) {
+                recs.add("🏡 " + d.format(FORMAT));
+            }
+        }
+        if (c.getProximoContacto() != null) {
+            LocalDate d = c.getProximoContacto();
+            if (!d.isBefore(hoy) && !d.isAfter(fin)) {
+                recs.add("📅 " + d.format(FORMAT));
+            }
+        }
+        return recs;
     }
 
     public static VBox crearPanelRecordatoriosPequeno() {
         VBox vbox = new VBox(5);
-        vbox.setPadding(new Insets(10));
-        List<String> recordatorios = obtenerRecordatoriosComoLista();
-        for (String rec : recordatorios) {
-            Label lbl = new Label(rec);
-            vbox.getChildren().add(lbl);
+        try {
+            for (Cliente c : ClienteDAO.listarClientes()) {
+                List<String> recs = getRecordatorios(c);
+                if (!recs.isEmpty()) {
+                    Label label = new Label(c.getNombre() + " " + c.getApellido() + ": " + String.join(", ", recs));
+                    vbox.getChildren().add(label);
+                }
+            }
+        } catch (SQLException e) {
+            ErrorHandler.showError("Error", "No se pudo cargar panel de recordatorios: " + e.getMessage());
         }
-        vbox.setStyle("-fx-background-color: #f0f0f0; -fx-border-color: #ccc;");
         return vbox;
     }
 }

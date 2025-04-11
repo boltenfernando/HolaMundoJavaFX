@@ -1,25 +1,39 @@
 package controller;
 
+import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.logging.Logger;
+
 import dao.ClienteDAO;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.Cliente;
 import service.RecordatorioService;
 import util.ErrorHandler;
 import util.LoggerUtil;
-
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.logging.Logger;
 
 public class ClienteController {
     private final ObservableList<Cliente> clientes;
@@ -46,9 +60,9 @@ public class ClienteController {
     public ClienteController(ObservableList<Cliente> clientes) {
         this.clientes = clientes;
         inicializarControles();
+        armarPanelFormulario();
         configurarTabla();
         configurarRecordatorios();
-        armarPanelFormulario();
     }
 
     private void inicializarControles() {
@@ -116,13 +130,10 @@ public class ClienteController {
         tableClientes = new TableView<>();
         TableColumn<Cliente, String> colCat = new TableColumn<>("Categoría");
         colCat.setCellValueFactory(new PropertyValueFactory<>("categoria"));
-
         TableColumn<Cliente, String> colNom = new TableColumn<>("Nombre");
         colNom.setCellValueFactory(new PropertyValueFactory<>("nombre"));
-
         TableColumn<Cliente, String> colApe = new TableColumn<>("Apellido");
         colApe.setCellValueFactory(new PropertyValueFactory<>("apellido"));
-
         TableColumn<Cliente, String> colRef = new TableColumn<>("Referencia");
         colRef.setCellValueFactory(new PropertyValueFactory<>("referencia"));
 
@@ -156,7 +167,24 @@ public class ClienteController {
             }
         });
 
-        tableClientes.getColumns().addAll(colCat, colNom, colApe, colRef, colVer, colEditar, colEliminar);
+        TableColumn<Cliente, String> colRec = new TableColumn<>("Recordatorios");
+        colRec.setCellValueFactory(c ->
+            new ReadOnlyStringWrapper(String.join(", ", RecordatorioService.getRecordatorios(c.getValue())))
+        );
+
+        tableClientes.getColumns().addAll(colCat, colNom, colApe, colRef, colVer, colEditar, colEliminar, colRec);
+
+        tableClientes.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(Cliente item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item != null && !RecordatorioService.getRecordatorios(item).isEmpty()) {
+                    setStyle("-fx-background-color: rgba(255,255,0,0.3);");
+                } else {
+                    setStyle("");
+                }
+            }
+        });
     }
 
     private void configurarRecordatorios() {
@@ -166,13 +194,8 @@ public class ClienteController {
         panelRecordatorios.getChildren().add(btnLupa);
     }
 
-    public TableView<Cliente> obtenerTablaClientes() {
-        return tableClientes;
-    }
-
-    public VBox obtenerPanelRecordatoriosConLupa() {
-        return panelRecordatorios;
-    }
+    public TableView<Cliente> obtenerTablaClientes() { return tableClientes; }
+    public VBox obtenerPanelRecordatoriosConLupa() { return panelRecordatorios; }
 
     public void listarClientes() {
         clientes.clear();
@@ -180,7 +203,7 @@ public class ClienteController {
             clientes.addAll(ClienteDAO.listarClientes());
             tableClientes.setItems(clientes);
         } catch (SQLException ex) {
-            ErrorHandler.showError("Error", "No se pudo listar los clientes: " + ex.getMessage());
+            ErrorHandler.showError("Error", ex.getMessage());
         }
     }
 
@@ -227,15 +250,8 @@ public class ClienteController {
 
         btnGuardar.setText(cliente == null ? "Guardar" : "Actualizar");
         btnGuardar.setOnAction(e -> {
-            boolean ok;
-            if (cliente == null) {
-                ok = guardarCliente();
-            } else {
-                ok = actualizarCliente(cliente);
-            }
-            if (ok) {
-                dialog.close();
-            }
+            boolean ok = cliente == null ? guardarCliente() : actualizarCliente(cliente);
+            if (ok) dialog.close();
         });
 
         ScrollPane scroll = new ScrollPane(panelFormulario);
@@ -342,7 +358,6 @@ public class ClienteController {
         VBox v = new VBox(5);
         v.setPadding(new Insets(10));
 
-        // Helper para añadir campo
         BiConsumer<String, String> addField = (label, value) -> {
             Label lbl = new Label(label);
             lbl.setStyle("-fx-font-weight:bold");
@@ -356,7 +371,7 @@ public class ClienteController {
         if (cliente.getReferencia() != null && !cliente.getReferencia().isEmpty())
             addField.accept("Referencia:", cliente.getReferencia());
         if (cliente.getCumpleaños() != null)
-            addField.accept("Cumpleaños:", cliente.getCumpleaños().toString());
+            addField.accept("Cumpleaños:", cliente.getCumpleaños().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         if (cliente.isEsPadreOMadre())
             addField.accept("Es padre/madre:", "Sí");
         if (cliente.getGustosMusicales() != null && !cliente.getGustosMusicales().isEmpty())
@@ -378,11 +393,11 @@ public class ClienteController {
         if (cliente.isFueCliente())
             addField.accept("Fue cliente:", "Sí");
         if (cliente.getFechaCompraVenta() != null)
-            addField.accept("Fecha compra/venta:", cliente.getFechaCompraVenta().toString());
+            addField.accept("Fecha compra/venta:", cliente.getFechaCompraVenta().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         if (cliente.isDeseaContacto())
             addField.accept("Desea contacto:", "Sí");
         if (cliente.getProximoContacto() != null)
-            addField.accept("Próximo contacto:", cliente.getProximoContacto().toString());
+            addField.accept("Próximo contacto:", cliente.getProximoContacto().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         if (cliente.getTemasConversacion() != null && !cliente.getTemasConversacion().isEmpty())
             addField.accept("Temas conversación:", cliente.getTemasConversacion());
         if (cliente.getLugaresVisita() != null && !cliente.getLugaresVisita().isEmpty())
@@ -396,8 +411,6 @@ public class ClienteController {
 
         ScrollPane scroll = new ScrollPane(v);
         scroll.setFitToWidth(true);
-        scroll.setFitToHeight(true);
-
         Scene sc = new Scene(scroll, 400, 600);
         s.setScene(sc);
         s.showAndWait();
