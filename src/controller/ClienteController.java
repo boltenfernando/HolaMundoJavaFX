@@ -51,7 +51,6 @@ public class ClienteController {
     private TextField txtGustosMusicales, txtClubFutbol, txtBebidas, txtComida;
 
     private Button btnGuardar;
-    private VBox panelFormulario;
 
     private static final Logger logger = LoggerUtil.getLogger();
     private static final List<String> CATEGORIAS = Arrays.asList("A+", "A", "B", "C", "D");
@@ -60,7 +59,6 @@ public class ClienteController {
     public ClienteController(ObservableList<Cliente> clientes) {
         this.clientes = clientes;
         inicializarControles();
-        armarPanelFormulario();
         configurarTabla();
         configurarRecordatorios();
     }
@@ -119,8 +117,8 @@ public class ClienteController {
         btnGuardar = new Button();
     }
 
-    private void armarPanelFormulario() {
-        panelFormulario = new VBox(8,
+    private VBox armarPanelFormulario() {
+        VBox panelFormulario = new VBox(8,
             new Label("Categoría:"), cmbCategoria,
             new Label("Nombre:"), txtNombre,
             new Label("Apellido:"), txtApellido,
@@ -157,6 +155,7 @@ public class ClienteController {
             btnGuardar
         );
         panelFormulario.setPadding(new Insets(10));
+        return panelFormulario;
     }
 
     private void configurarTabla() {
@@ -249,12 +248,42 @@ public class ClienteController {
 
     public void mostrarFormularioModal(Cliente cliente) {
         System.out.println("DEBUG: abrir formulario modal");
+        VBox panelFormulario = armarPanelFormulario();
+
         Stage dialog = new Stage();
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.setTitle(cliente == null ? "Nuevo Cliente" : "Editar Cliente");
 
         if (cliente != null) {
-            // precarga...
+            cmbCategoria.setValue(cliente.getCategoria());
+            txtNombre.setText(cliente.getNombre());
+            txtApellido.setText(cliente.getApellido());
+            txtReferencia.setText(cliente.getReferencia());
+            dpProximoContacto.setValue(cliente.getProximoContacto());
+            txtDireccion.setText(cliente.getDireccion());
+            txtLocalidad.setText(cliente.getLocalidad());
+            dpCumpleaños.setValue(cliente.getCumpleaños());
+            taDatosPersonales.setText(cliente.getDatosPersonales());
+            taDatosLaborales.setText(cliente.getDatosLaborales());
+            taDatosVenta.setText(cliente.getDatosVenta());
+            taDatosCompra.setText(cliente.getDatosCompra());
+            cbDeseaContacto.setSelected(cliente.isDeseaContacto());
+            cbFueCliente.setSelected(cliente.isFueCliente());
+            dpFechaCompraVenta.setValue(cliente.getFechaCompraVenta());
+            cbEsReferidor.setSelected(cliente.isEsReferidor());
+            txtRefirioA.setText(cliente.getRefirioA());
+            txtReferidoPor.setText(cliente.getReferidoPor());
+            cbEsPadre.setSelected(cliente.isEsPadre());
+            cbEsMadre.setSelected(cliente.isEsMadre());
+            txtHijos.setText(cliente.getNombreHijos());
+            txtTelefono.setText(cliente.getTelefono());
+            txtRedes.setText(cliente.getRedesSociales());
+            txtEmail.setText(cliente.getEmail());
+            cmbOcupacion.setValue(cliente.getOcupacion());
+            txtGustosMusicales.setText(cliente.getGustosMusicales());
+            txtClubFutbol.setText(cliente.getClubFutbol());
+            txtBebidas.setText(cliente.getGustoBebidas());
+            txtComida.setText(cliente.getPreferenciasComida());
         } else {
             limpiarCampos();
         }
@@ -268,8 +297,7 @@ public class ClienteController {
         ScrollPane scroll = new ScrollPane(panelFormulario);
         scroll.setFitToWidth(true);
 
-        Scene scene = new Scene(scroll, 450, 700);
-        dialog.setScene(scene);
+        dialog.setScene(new Scene(scroll, 450, 700));
         dialog.showAndWait();
     }
 

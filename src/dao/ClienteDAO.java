@@ -63,7 +63,6 @@ public class ClienteDAO {
                 lista.add(c);
             }
         }
-        System.out.println("DEBUG: clientes cargados = " + lista.size());
         return lista;
     }
 
