@@ -1,9 +1,6 @@
 package controller;
 
 import dao.ClienteDAO;
-import model.Cliente;
-import util.ErrorHandler;
-import util.LoggerUtil;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -12,273 +9,270 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import model.Cliente;
+import service.RecordatorioService;
+import util.ErrorHandler;
+import util.LoggerUtil;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.logging.Logger;
 
 public class ClienteController {
-    // Controles existentes
-    private TextField txtNombre;
-    private TextField txtApellido;
-    private TextField txtDireccion;
+    private final ObservableList<Cliente> clientes;
+    private TableView<Cliente> tableClientes;
+    private VBox panelFormulario;
+    private VBox panelRecordatorios;
+
+    // Form controls
+    private TextField txtNombre, txtApellido, txtReferencia, txtCategoria;
     private DatePicker dpCumpleaños;
-    public TableView<Cliente> tableClientes;
-    private ObservableList<Cliente> clientes;
-    private Button btnAgregar;
-    private HBox formContainer;
-    
-    // Controles adicionales para datos extendidos
-    private TextField txtReferencia;
     private CheckBox cbEsPadreOMadre;
-    private TextField txtTelefono;
-    private TextField txtEmail;
-    private TextField txtOcupacion;
-    private TextField txtCategoria;      // Para clasificar: A+, A, B, C o D
-    private TextField txtReferidoPor;
-    private TextField txtRefirioA;
-    
-    // Botón para ver contactos por categoría
-    private Button btnVerPorCategoria;
+    private TextField txtGustosMusicales, txtGustosFutbol, txtGustosComidas, txtRedesSociales;
+    private TextField txtTelefono, txtEmail, txtDireccion, txtOcupacion;
+    private CheckBox cbFueCliente, cbDeseaContacto;
+    private DatePicker dpFechaCompraVenta, dpProximoContacto;
+    private TextField txtTemasConversacion, txtLugaresVisita, txtDatosAdicionales, txtReferidoPor, txtRefirioA;
+    private Button btnAgregar, btnBuscarRecordatorios;
 
     private static final Logger logger = LoggerUtil.getLogger();
 
-    public ClienteController(TextField txtNombre, TextField txtApellido, TextField txtDireccion,
-                             DatePicker dpCumpleaños, Button btnAgregar, TableView<Cliente> tableClientes,
-                             ObservableList<Cliente> clientes, HBox formContainer) {
-        this.txtNombre = txtNombre;
-        this.txtApellido = txtApellido;
-        this.txtDireccion = txtDireccion;
-        this.dpCumpleaños = dpCumpleaños;
-        this.btnAgregar = btnAgregar;
-        this.tableClientes = tableClientes;
+    public ClienteController(ObservableList<Cliente> clientes) {
         this.clientes = clientes;
-        this.formContainer = formContainer;
-        inicializarControlesAdicionales();
-        setupEventHandlers();
-        applyStyles();
+        inicializarControles();
+        configurarTabla();
+        configurarRecordatorios();
     }
 
-    // Inicializa controles extra para datos extendidos y el botón de ver contactos por categoría
-    private void inicializarControlesAdicionales() {
-        txtReferencia = new TextField();
-        txtReferencia.setPromptText("Referencia");
+    private void inicializarControles() {
+        txtNombre = new TextField(); txtNombre.setPromptText("Nombre");
+        txtApellido = new TextField(); txtApellido.setPromptText("Apellido");
+        txtCategoria = new TextField(); txtCategoria.setPromptText("Categoría");
+        txtReferencia = new TextField(); txtReferencia.setPromptText("Referencia");
+        dpCumpleaños = new DatePicker();
         cbEsPadreOMadre = new CheckBox("Es padre/madre");
-        txtTelefono = new TextField();
-        txtTelefono.setPromptText("Teléfono");
-        txtEmail = new TextField();
-        txtEmail.setPromptText("Email");
-        txtOcupacion = new TextField();
-        txtOcupacion.setPromptText("Ocupación");
-        txtCategoria = new TextField();
-        txtCategoria.setPromptText("Categoría (A+, A, B, C, D)");
-        txtReferidoPor = new TextField();
-        txtReferidoPor.setPromptText("Referido por");
-        txtRefirioA = new TextField();
-        txtRefirioA.setPromptText("Refirió a");
+        txtGustosMusicales = new TextField(); txtGustosMusicales.setPromptText("Gustos musicales");
+        txtGustosFutbol = new TextField(); txtGustosFutbol.setPromptText("Gustos fútbol");
+        txtGustosComidas = new TextField(); txtGustosComidas.setPromptText("Gustos comidas");
+        txtRedesSociales = new TextField(); txtRedesSociales.setPromptText("Redes sociales");
+        txtTelefono = new TextField(); txtTelefono.setPromptText("Teléfono");
+        txtEmail = new TextField(); txtEmail.setPromptText("Email");
+        txtDireccion = new TextField(); txtDireccion.setPromptText("Dirección");
+        txtOcupacion = new TextField(); txtOcupacion.setPromptText("Ocupación");
+        cbFueCliente = new CheckBox("Fue cliente");
+        dpFechaCompraVenta = new DatePicker();
+        cbDeseaContacto = new CheckBox("Desea contacto");
+        dpProximoContacto = new DatePicker();
+        txtTemasConversacion = new TextField(); txtTemasConversacion.setPromptText("Temas conversación");
+        txtLugaresVisita = new TextField(); txtLugaresVisita.setPromptText("Lugares visita");
+        txtDatosAdicionales = new TextField(); txtDatosAdicionales.setPromptText("Datos adicionales");
+        txtReferidoPor = new TextField(); txtReferidoPor.setPromptText("Referido por");
+        txtRefirioA = new TextField(); txtRefirioA.setPromptText("Refirió a");
 
-        btnVerPorCategoria = new Button("Ver contactos por Categoría");
-        btnVerPorCategoria.setOnAction(e -> mostrarContactosPorCategoria());
-    }
-
-    private void setupEventHandlers() {
+        btnAgregar = new Button("Agregar Cliente");
         btnAgregar.setOnAction(e -> agregarCliente());
     }
 
-    private void applyStyles() {
-        txtNombre.getStyleClass().add("custom-text-field");
-        txtApellido.getStyleClass().add("custom-text-field");
-        txtDireccion.getStyleClass().add("custom-text-field");
-        dpCumpleaños.getStyleClass().add("custom-date-picker");
-        btnAgregar.getStyleClass().add("custom-button");
+    private void configurarTabla() {
+        tableClientes = new TableView<>();
+        TableColumn<Cliente, String> colCat = new TableColumn<>("Categoría");
+        colCat.setCellValueFactory(new PropertyValueFactory<>("categoria"));
+        TableColumn<Cliente, String> colNom = new TableColumn<>("Nombre");
+        colNom.setCellValueFactory(new PropertyValueFactory<>("nombre"));
+        TableColumn<Cliente, String> colApe = new TableColumn<>("Apellido");
+        colApe.setCellValueFactory(new PropertyValueFactory<>("apellido"));
+        TableColumn<Cliente, String> colRef = new TableColumn<>("Referencia");
+        colRef.setCellValueFactory(new PropertyValueFactory<>("referencia"));
 
-        // Estilos para controles adicionales
-        txtReferencia.getStyleClass().add("custom-text-field");
-        txtTelefono.getStyleClass().add("custom-text-field");
-        txtEmail.getStyleClass().add("custom-text-field");
-        txtOcupacion.getStyleClass().add("custom-text-field");
-        txtCategoria.getStyleClass().add("custom-text-field");
-        txtReferidoPor.getStyleClass().add("custom-text-field");
-        txtRefirioA.getStyleClass().add("custom-text-field");
-        btnVerPorCategoria.getStyleClass().add("custom-button");
+        TableColumn<Cliente, Void> colVer = new TableColumn<>("VER");
+        colVer.setCellFactory(tc -> new TableCell<>() {
+            private final Button btn = new Button("VER");
+            { btn.setOnAction(e -> mostrarDetalle(getTableView().getItems().get(getIndex()))); }
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : btn);
+            }
+        });
+
+        TableColumn<Cliente, Void> colEditar = new TableColumn<>("EDITAR");
+        colEditar.setCellFactory(tc -> new TableCell<>() {
+            private final Button btn = new Button("EDITAR");
+            { btn.setOnAction(e -> cargarParaEdicion(getTableView().getItems().get(getIndex()))); }
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : btn);
+            }
+        });
+
+        TableColumn<Cliente, Void> colEliminar = new TableColumn<>("ELIMINAR");
+        colEliminar.setCellFactory(tc -> new TableCell<>() {
+            private final Button btn = new Button("ELIMINAR");
+            { btn.setOnAction(e -> eliminarConfirmacion(getTableView().getItems().get(getIndex()))); }
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : btn);
+            }
+        });
+
+        tableClientes.getColumns().addAll(colCat, colNom, colApe, colRef, colVer, colEditar, colEliminar);
     }
 
-    // Agregar cliente: se recogen los datos extendidos y se utiliza el constructor completo
-    public void agregarCliente() {
-        String nombre = txtNombre.getText();
-        String apellido = txtApellido.getText();
-        String direccion = txtDireccion.getText();
-        LocalDate cumpleaños = dpCumpleaños.getValue();
-
-        // Validar campos básicos
-        if (nombre.isEmpty() || apellido.isEmpty() || direccion.isEmpty()) {
-            ErrorHandler.showError("Error", "Nombre, Apellido y Dirección son obligatorios.");
-            return;
-        }
-        // Recoger datos extendidos (se pueden agregar validaciones extra según convenga)
-        String referencia = txtReferencia.getText();
-        boolean esPadreOMadre = cbEsPadreOMadre.isSelected();
-        String telefono = txtTelefono.getText();
-        String email = txtEmail.getText();
-        String ocupacion = txtOcupacion.getText();
-        String categoria = txtCategoria.getText();
-        String referidoPor = txtReferidoPor.getText();
-        String refirioA = txtRefirioA.getText();
-
-        // Los demás campos se dejan en blanco o nulos por ahora
-        Cliente cliente = new Cliente(0, nombre, apellido, referencia, cumpleaños, esPadreOMadre,
-                "", "", "", "", telefono, email, direccion, ocupacion, false, null, categoria, false,
-                null, "", "", "", referidoPor, refirioA);
-        try {
-            ClienteDAO.agregarCliente(cliente);
-            logger.info("Cliente agregado: " + nombre + " " + apellido);
-            limpiarCampos();
-            listarClientes();
-        } catch (SQLException ex) {
-            logger.severe("Error al agregar cliente: " + ex.getMessage());
-            ErrorHandler.showError("Error", "No se pudo agregar el cliente: " + ex.getMessage());
-        }
+    private void configurarRecordatorios() {
+        panelRecordatorios = RecordatorioService.crearPanelRecordatoriosPequeno();
+        btnBuscarRecordatorios = new Button("🔍");
+        btnBuscarRecordatorios.setOnAction(e -> RecordatorioService.mostrarRecordatorios());
     }
 
-    // Listar clientes
+    // Muestra el formulario en blanco para crear un nuevo cliente
+    public void mostrarFormularioNuevo() {
+        limpiarCampos();
+    }
+
+    public VBox obtenerPanelFormulario() {
+        panelFormulario = new VBox(10,
+            new Label("Formulario Cliente"),
+            txtCategoria, txtNombre, txtApellido, txtReferencia, dpCumpleaños, cbEsPadreOMadre,
+            txtGustosMusicales, txtGustosFutbol, txtGustosComidas, txtRedesSociales,
+            txtTelefono, txtEmail, txtDireccion, txtOcupacion, cbFueCliente,
+            dpFechaCompraVenta, cbDeseaContacto, dpProximoContacto,
+            txtTemasConversacion, txtLugaresVisita, txtDatosAdicionales, txtReferidoPor, txtRefirioA,
+            btnAgregar
+        );
+        panelFormulario.setPadding(new Insets(10));
+        return panelFormulario;
+    }
+
+    public TableView<Cliente> obtenerTablaClientes() {
+        return tableClientes;
+    }
+
+    public VBox obtenerPanelRecordatoriosConLupa() {
+        return new VBox(10, panelRecordatorios, btnBuscarRecordatorios);
+    }
+
     public void listarClientes() {
         clientes.clear();
         try {
             clientes.addAll(ClienteDAO.listarClientes());
             tableClientes.setItems(clientes);
-            logger.info("Listado de clientes actualizado. Total: " + clientes.size());
         } catch (SQLException ex) {
-            logger.severe("Error al listar clientes: " + ex.getMessage());
             ErrorHandler.showError("Error", "No se pudo listar los clientes: " + ex.getMessage());
         }
     }
 
-    // Modificar cliente (actualiza los campos básicos; se podría extender para incluir los nuevos campos en la edición)
-    public void modificarCliente(Cliente cliente) {
+    public void agregarCliente() {
         String nombre = txtNombre.getText();
         String apellido = txtApellido.getText();
-        String direccion = txtDireccion.getText();
-        LocalDate cumpleaños = dpCumpleaños.getValue();
-
-        if (nombre.isEmpty() || apellido.isEmpty() || direccion.isEmpty()) {
-            ErrorHandler.showError("Error", "Nombre, Apellido y Dirección son obligatorios.");
+        String categoria = txtCategoria.getText();
+        if (nombre.isEmpty() || apellido.isEmpty() || categoria.isEmpty()) {
+            ErrorHandler.showError("Error", "Nombre, Apellido y Categoría son obligatorios.");
             return;
         }
-        // Para la modificación se pueden recoger también los nuevos campos (se omiten aquí por simplicidad)
-        Cliente clienteActualizado = new Cliente(cliente.getId(), nombre, apellido, cliente.getReferencia(), cumpleaños, cliente.isEsPadreOMadre(),
-                cliente.getGustosMusicales(), cliente.getGustosFutbol(), cliente.getGustosComidas(), cliente.getRedesSociales(),
-                cliente.getTelefono(), cliente.getEmail(), direccion, cliente.getOcupacion(), cliente.isFueCliente(),
-                cliente.getFechaCompraVenta(), cliente.getCategoria(), cliente.isDeseaContacto(), cliente.getProximoContacto(),
-                cliente.getTemasConversacion(), cliente.getLugaresVisita(), cliente.getDatosAdicionales(), cliente.getReferidoPor(), cliente.getRefirioA());
+        Cliente c = new Cliente(0, nombre, apellido, txtReferencia.getText(), dpCumpleaños.getValue(),
+            cbEsPadreOMadre.isSelected(), txtGustosMusicales.getText(), txtGustosFutbol.getText(),
+            txtGustosComidas.getText(), txtRedesSociales.getText(), txtTelefono.getText(),
+            txtEmail.getText(), txtDireccion.getText(), txtOcupacion.getText(),
+            cbFueCliente.isSelected(), dpFechaCompraVenta.getValue(), categoria,
+            cbDeseaContacto.isSelected(), dpProximoContacto.getValue(), txtTemasConversacion.getText(),
+            txtLugaresVisita.getText(), txtDatosAdicionales.getText(),
+            txtReferidoPor.getText(), txtRefirioA.getText()
+        );
         try {
-            ClienteDAO.modificarCliente(clienteActualizado);
-            logger.info("Cliente modificado: ID " + cliente.getId());
+            ClienteDAO.agregarCliente(c);
             limpiarCampos();
             listarClientes();
-            btnAgregar.setText("Agregar");
-            btnAgregar.setOnAction(e -> agregarCliente());
         } catch (SQLException ex) {
-            logger.severe("Error al modificar cliente: " + ex.getMessage());
-            ErrorHandler.showError("Error", "No se pudo modificar el cliente: " + ex.getMessage());
+            ErrorHandler.showError("Error", ex.getMessage());
         }
     }
 
-    // Eliminar cliente con confirmación
-    public void eliminarCliente(Cliente cliente) {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Confirmar Eliminación");
-        confirm.setHeaderText(null);
-        confirm.setContentText("¿Estás seguro de eliminar a " + cliente.getNombre() + " " + cliente.getApellido() + "?");
-        confirm.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
+    public void limpiarCampos() {
+        txtNombre.clear();
+        txtApellido.clear();
+        txtReferencia.clear();
+        txtCategoria.clear();
+        dpCumpleaños.setValue(null);
+        cbEsPadreOMadre.setSelected(false);
+        txtGustosMusicales.clear();
+        txtGustosFutbol.clear();
+        txtGustosComidas.clear();
+        txtRedesSociales.clear();
+        txtTelefono.clear();
+        txtEmail.clear();
+        txtDireccion.clear();
+        txtOcupacion.clear();
+        cbFueCliente.setSelected(false);
+        dpFechaCompraVenta.setValue(null);
+        cbDeseaContacto.setSelected(false);
+        dpProximoContacto.setValue(null);
+        txtTemasConversacion.clear();
+        txtLugaresVisita.clear();
+        txtDatosAdicionales.clear();
+        txtReferidoPor.clear();
+        txtRefirioA.clear();
+    }
+
+    private void cargarParaEdicion(Cliente cliente) {
+        // cargar datos en formulario...
+    }
+
+    private void eliminarConfirmacion(Cliente cliente) {
+        Alert a = new Alert(Alert.AlertType.CONFIRMATION, "¿Eliminar " + cliente.getNombre() + "?",
+            ButtonType.OK, ButtonType.CANCEL);
+        a.showAndWait().ifPresent(b -> {
+            if (b == ButtonType.OK) {
                 try {
                     ClienteDAO.eliminarCliente(cliente.getId());
-                    logger.info("Cliente eliminado: ID " + cliente.getId());
                     listarClientes();
                 } catch (SQLException ex) {
-                    logger.severe("Error al eliminar cliente: " + ex.getMessage());
-                    ErrorHandler.showError("Error", "No se pudo eliminar el cliente: " + ex.getMessage());
+                    ErrorHandler.showError("Error", ex.getMessage());
                 }
             }
         });
     }
 
-    // Cargar datos de un cliente en el formulario para editar
-    public void cargarClienteEnFormulario(Cliente cliente) {
-        txtNombre.setText(cliente.getNombre());
-        txtApellido.setText(cliente.getApellido());
-        txtDireccion.setText(cliente.getDireccion());
-        dpCumpleaños.setValue(cliente.getCumpleaños());
-        txtReferencia.setText(cliente.getReferencia());
-        cbEsPadreOMadre.setSelected(cliente.isEsPadreOMadre());
-        txtTelefono.setText(cliente.getTelefono());
-        txtEmail.setText(cliente.getEmail());
-        txtOcupacion.setText(cliente.getOcupacion());
-        txtCategoria.setText(cliente.getCategoria());
-        txtReferidoPor.setText(cliente.getReferidoPor());
-        txtRefirioA.setText(cliente.getRefirioA());
-        logger.info("Cargando datos del cliente en el formulario: ID " + cliente.getId());
-        btnAgregar.setText("Modificar");
-        btnAgregar.setOnAction(e -> modificarCliente(cliente));
-    }
-
-    // Limpiar todos los campos del formulario
-    public void limpiarCampos() {
-        txtNombre.clear();
-        txtApellido.clear();
-        txtDireccion.clear();
-        dpCumpleaños.setValue(null);
-        txtReferencia.clear();
-        cbEsPadreOMadre.setSelected(false);
-        txtTelefono.clear();
-        txtEmail.clear();
-        txtOcupacion.clear();
-        txtCategoria.clear();
-        txtReferidoPor.clear();
-        txtRefirioA.clear();
-    }
-
-    // Mostrar contactos por categoría en una nueva ventana
-    private void mostrarContactosPorCategoria() {
-        Stage stage = new Stage();
-        stage.initModality(Modality.APPLICATION_MODAL);
-        stage.setTitle("Contactos por Categoría");
-
-        // Crear un TableView similar al existente, pero filtrado
-        TableView<Cliente> tablaCategoria = new TableView<>();
-        TableColumn<Cliente, String> colNombre = new TableColumn<>("Nombre");
-        colNombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
-        TableColumn<Cliente, String> colApellido = new TableColumn<>("Apellido");
-        colApellido.setCellValueFactory(new PropertyValueFactory<>("apellido"));
-        TableColumn<Cliente, String> colCategoria = new TableColumn<>("Categoría");
-        colCategoria.setCellValueFactory(new PropertyValueFactory<>("categoria"));
-        tablaCategoria.getColumns().addAll(colNombre, colApellido, colCategoria);
-
-        // Filtrar la lista de clientes según la categoría (si se ingresa en txtCategoria)
-        String filtro = txtCategoria.getText().trim();
-        ObservableList<Cliente> listaFiltrada = clientes.filtered(c -> filtro.isEmpty() || filtro.equalsIgnoreCase(c.getCategoria()));
-        tablaCategoria.setItems(listaFiltrada);
-
-        VBox vbox = new VBox(10, tablaCategoria);
-        vbox.setPadding(new Insets(10));
-        Scene scene = new Scene(vbox, 400, 300);
-        stage.setScene(scene);
-        stage.showAndWait();
-    }
-
-    // Para integrar el botón "Ver contactos por Categoría" en el layout del formulario,
-    // se puede agregar un método que retorne un panel con todos los controles.
-    public VBox obtenerPanelFormularioExtendido() {
-        VBox panel = new VBox(10);
-        panel.getChildren().addAll(
-                new Label("Datos Básicos:"),
-                txtNombre, txtApellido, txtDireccion, dpCumpleaños,
-                new Label("Datos Extendidos:"),
-                txtReferencia, cbEsPadreOMadre, txtTelefono, txtEmail, txtOcupacion, txtCategoria, txtReferidoPor, txtRefirioA,
-                btnAgregar, btnVerPorCategoria
+    private void mostrarDetalle(Cliente cliente) {
+        Stage s = new Stage();
+        s.initModality(Modality.APPLICATION_MODAL);
+        s.setTitle("Detalle Cliente");
+        VBox v = new VBox(10,
+            new Label("ID: " + cliente.getId()),
+            new Label("Nombre: " + cliente.getNombre()),
+            new Label("Apellido: " + cliente.getApellido()),
+            new Label("Categoría: " + cliente.getCategoria()),
+            new Label("Referencia: " + cliente.getReferencia()),
+            new Label("Cumpleaños: " + cliente.getCumpleaños()),
+            new Label("Es padre/madre: " + cliente.isEsPadreOMadre()),
+            new Label("Gustos musicales: " + cliente.getGustosMusicales()),
+            new Label("Gustos fútbol: " + cliente.getGustosFutbol()),
+            new Label("Gustos comidas: " + cliente.getGustosComidas()),
+            new Label("Redes sociales: " + cliente.getRedesSociales()),
+            new Label("Teléfono: " + cliente.getTelefono()),
+            new Label("Email: " + cliente.getEmail()),
+            new Label("Dirección: " + cliente.getDireccion()),
+            new Label("Ocupación: " + cliente.getOcupacion()),
+            new Label("Fue cliente: " + cliente.isFueCliente()),
+            new Label("Fecha compra/venta: " + cliente.getFechaCompraVenta()),
+            new Label("Desea contacto: " + cliente.isDeseaContacto()),
+            new Label("Próximo contacto: " + cliente.getProximoContacto()),
+            new Label("Temas: " + cliente.getTemasConversacion()),
+            new Label("Lugares visita: " + cliente.getLugaresVisita()),
+            new Label("Datos adicionales: " + cliente.getDatosAdicionales()),
+            new Label("Referido por: " + cliente.getReferidoPor()),
+            new Label("Refirió a: " + cliente.getRefirioA())
         );
-        panel.setPadding(new Insets(10));
-        return panel;
+        v.setPadding(new Insets(10));
+        Scene sc = new Scene(v, 400, 600);
+        s.setScene(sc);
+        s.showAndWait();
     }
-    
+
+    public void mostrarBusqueda() {
+        // implementación de búsqueda...
+    }
+
+    public void mostrarContactosPorCategoria() {
+        // simplemente reusar la tabla
+        listarClientes();
+    }
 }
