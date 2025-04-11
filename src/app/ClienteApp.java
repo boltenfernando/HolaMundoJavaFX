@@ -24,14 +24,12 @@ public class ClienteApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        // Inicialización DB y recordatorios
         TestSQLite.createTable();
         TestSQLite.verificarYAgregarColumnaCumpleaños();
         RecordatorioService.mostrarRecordatorios();
 
         controller = new ClienteController(clientes);
 
-        // Botón Nuevo Cliente (izquierda)
         Button btnNuevo = new Button("Nuevo Cliente");
         btnNuevo.setOnAction(e -> controller.mostrarFormularioModal(null));
 
@@ -39,7 +37,6 @@ public class ClienteApp extends Application {
         panelIzquierdo.setPadding(new Insets(10));
         panelIzquierdo.setSpacing(10);
 
-        // Panel central: filtros + tabla
         ChoiceBox<String> cbCategoria = new ChoiceBox<>();
         cbCategoria.getItems().addAll("", "A+", "A", "B", "C", "D");
         cbCategoria.setValue("");
@@ -47,12 +44,19 @@ public class ClienteApp extends Application {
         TextField tfApellido = new TextField(); tfApellido.setPromptText("Apellido");
         Button btnFiltrar = new Button("Filtrar");
         btnFiltrar.setOnAction(e -> controller.aplicarFiltros(cbCategoria.getValue(), tfNombre.getText(), tfApellido.getText()));
+        Button btnLimpiar = new Button("Limpiar Filtro");
+        btnLimpiar.setOnAction(e -> {
+            cbCategoria.setValue("");
+            tfNombre.clear();
+            tfApellido.clear();
+            controller.listarClientes();
+        });
 
         HBox filtros = new HBox(10,
             new Label("Categoría:"), cbCategoria,
             new Label("Nombre:"), tfNombre,
             new Label("Apellido:"), tfApellido,
-            btnFiltrar
+            btnFiltrar, btnLimpiar
         );
         filtros.setPadding(new Insets(10));
 
@@ -63,11 +67,9 @@ public class ClienteApp extends Application {
         VBox panelCentral = new VBox(filtros, scrollTabla);
         VBox.setVgrow(scrollTabla, Priority.ALWAYS);
 
-        // Panel derecho: recordatorios
         VBox panelDerecho = controller.obtenerPanelRecordatoriosConLupa();
         panelDerecho.setPadding(new Insets(10));
 
-        // Layout principal
         BorderPane root = new BorderPane();
         root.setLeft(panelIzquierdo);
         root.setCenter(panelCentral);

@@ -18,6 +18,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
 public class ClienteController {
@@ -37,7 +38,7 @@ public class ClienteController {
     private TextField txtTemasConversacion, txtLugaresVisita, txtDatosAdicionales, txtReferidoPor, txtRefirioA;
     private Button btnGuardar;
 
-    private VBox panelFormulario; // panel usado en modal
+    private VBox panelFormulario;
 
     private static final Logger logger = LoggerUtil.getLogger();
     private static final List<String> CATEGORIAS = Arrays.asList("A+", "A", "B", "C", "D");
@@ -191,15 +192,11 @@ public class ClienteController {
         ));
     }
 
-    /** 
-     * Abre el formulario modal. Si cliente==null -> nuevo, else edición. 
-     */
     public void mostrarFormularioModal(Cliente cliente) {
         Stage dialog = new Stage();
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.setTitle(cliente == null ? "Nuevo Cliente" : "Editar Cliente");
 
-        // Precarga si es edición
         if (cliente != null) {
             cmbCategoria.setValue(cliente.getCategoria());
             txtNombre.setText(cliente.getNombre());
@@ -250,7 +247,6 @@ public class ClienteController {
         dialog.showAndWait();
     }
 
-    /** @return true si guardó correctamente */
     private boolean guardarCliente() {
         Cliente c = buildClienteFromForm(0);
         if (c == null) return false;
@@ -264,7 +260,6 @@ public class ClienteController {
         }
     }
 
-    /** @return true si actualizó correctamente */
     private boolean actualizarCliente(Cliente cliente) {
         Cliente c = buildClienteFromForm(cliente.getId());
         if (c == null) return false;
@@ -343,34 +338,67 @@ public class ClienteController {
         Stage s = new Stage();
         s.initModality(Modality.APPLICATION_MODAL);
         s.setTitle("Detalle Cliente");
-        VBox v = new VBox(10,
-            new Label("ID: " + cliente.getId()),
-            new Label("Categoría: " + cliente.getCategoria()),
-            new Label("Nombre: " + cliente.getNombre()),
-            new Label("Apellido: " + cliente.getApellido()),
-            new Label("Referencia: " + cliente.getReferencia()),
-            new Label("Cumpleaños: " + cliente.getCumpleaños()),
-            new Label("Es padre/madre: " + cliente.isEsPadreOMadre()),
-            new Label("Gustos musicales: " + cliente.getGustosMusicales()),
-            new Label("Gustos fútbol: " + cliente.getGustosFutbol()),
-            new Label("Gustos comidas: " + cliente.getGustosComidas()),
-            new Label("Redes sociales: " + cliente.getRedesSociales()),
-            new Label("Teléfono: " + cliente.getTelefono()),
-            new Label("Email: " + cliente.getEmail()),
-            new Label("Dirección: " + cliente.getDireccion()),
-            new Label("Ocupación: " + cliente.getOcupacion()),
-            new Label("Fue cliente: " + cliente.isFueCliente()),
-            new Label("Fecha compra/venta: " + cliente.getFechaCompraVenta()),
-            new Label("Desea contacto: " + cliente.isDeseaContacto()),
-            new Label("Próximo contacto: " + cliente.getProximoContacto()),
-            new Label("Temas conversación: " + cliente.getTemasConversacion()),
-            new Label("Lugares visita: " + cliente.getLugaresVisita()),
-            new Label("Datos adicionales: " + cliente.getDatosAdicionales()),
-            new Label("Referido por: " + cliente.getReferidoPor()),
-            new Label("Refirió a: " + cliente.getRefirioA())
-        );
+
+        VBox v = new VBox(5);
         v.setPadding(new Insets(10));
-        Scene sc = new Scene(new ScrollPane(v), 400, 600);
+
+        // Helper para añadir campo
+        BiConsumer<String, String> addField = (label, value) -> {
+            Label lbl = new Label(label);
+            lbl.setStyle("-fx-font-weight:bold");
+            Label val = new Label(value);
+            v.getChildren().add(new HBox(5, lbl, val));
+        };
+
+        if (cliente.getCategoria() != null) addField.accept("Categoría:", cliente.getCategoria());
+        if (cliente.getNombre() != null) addField.accept("Nombre:", cliente.getNombre());
+        if (cliente.getApellido() != null) addField.accept("Apellido:", cliente.getApellido());
+        if (cliente.getReferencia() != null && !cliente.getReferencia().isEmpty())
+            addField.accept("Referencia:", cliente.getReferencia());
+        if (cliente.getCumpleaños() != null)
+            addField.accept("Cumpleaños:", cliente.getCumpleaños().toString());
+        if (cliente.isEsPadreOMadre())
+            addField.accept("Es padre/madre:", "Sí");
+        if (cliente.getGustosMusicales() != null && !cliente.getGustosMusicales().isEmpty())
+            addField.accept("Gustos musicales:", cliente.getGustosMusicales());
+        if (cliente.getGustosFutbol() != null && !cliente.getGustosFutbol().isEmpty())
+            addField.accept("Gustos fútbol:", cliente.getGustosFutbol());
+        if (cliente.getGustosComidas() != null && !cliente.getGustosComidas().isEmpty())
+            addField.accept("Gustos comidas:", cliente.getGustosComidas());
+        if (cliente.getRedesSociales() != null && !cliente.getRedesSociales().isEmpty())
+            addField.accept("Redes sociales:", cliente.getRedesSociales());
+        if (cliente.getTelefono() != null && !cliente.getTelefono().isEmpty())
+            addField.accept("Teléfono:", cliente.getTelefono());
+        if (cliente.getEmail() != null && !cliente.getEmail().isEmpty())
+            addField.accept("Email:", cliente.getEmail());
+        if (cliente.getDireccion() != null && !cliente.getDireccion().isEmpty())
+            addField.accept("Dirección:", cliente.getDireccion());
+        if (cliente.getOcupacion() != null && !cliente.getOcupacion().isEmpty())
+            addField.accept("Ocupación:", cliente.getOcupacion());
+        if (cliente.isFueCliente())
+            addField.accept("Fue cliente:", "Sí");
+        if (cliente.getFechaCompraVenta() != null)
+            addField.accept("Fecha compra/venta:", cliente.getFechaCompraVenta().toString());
+        if (cliente.isDeseaContacto())
+            addField.accept("Desea contacto:", "Sí");
+        if (cliente.getProximoContacto() != null)
+            addField.accept("Próximo contacto:", cliente.getProximoContacto().toString());
+        if (cliente.getTemasConversacion() != null && !cliente.getTemasConversacion().isEmpty())
+            addField.accept("Temas conversación:", cliente.getTemasConversacion());
+        if (cliente.getLugaresVisita() != null && !cliente.getLugaresVisita().isEmpty())
+            addField.accept("Lugares visita:", cliente.getLugaresVisita());
+        if (cliente.getDatosAdicionales() != null && !cliente.getDatosAdicionales().isEmpty())
+            addField.accept("Datos adicionales:", cliente.getDatosAdicionales());
+        if (cliente.getReferidoPor() != null && !cliente.getReferidoPor().isEmpty())
+            addField.accept("Referido por:", cliente.getReferidoPor());
+        if (cliente.getRefirioA() != null && !cliente.getRefirioA().isEmpty())
+            addField.accept("Refirió a:", cliente.getRefirioA());
+
+        ScrollPane scroll = new ScrollPane(v);
+        scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
+
+        Scene sc = new Scene(scroll, 400, 600);
         s.setScene(sc);
         s.showAndWait();
     }
