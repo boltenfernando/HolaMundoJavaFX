@@ -7,15 +7,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import model.Cliente;
 import service.RecordatorioService;
@@ -27,14 +20,25 @@ public class ClienteApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        // 1) Crear tabla y verificar columnas antes de cualquier acceso al DAO
         TestSQLite.createTable();
         TestSQLite.verificarYAgregarColumnas();
-        RecordatorioService.mostrarRecordatorios();
 
+        // 2) Mostrar recordatorios
+        try {
+            RecordatorioService.mostrarRecordatorios();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 3) Instanciar el controlador y construir la UI
         controller = new ClienteController(clientes);
 
         Button btnNuevo = new Button("Nuevo Cliente");
-        btnNuevo.setOnAction(e -> controller.mostrarFormularioModal(null));
+        btnNuevo.setOnAction(e -> {
+            System.out.println("DEBUG: Nuevo Cliente clic");
+            controller.mostrarFormularioModal(null);
+        });
 
         VBox panelIzquierdo = new VBox(btnNuevo);
         panelIzquierdo.setPadding(new Insets(10));
@@ -82,6 +86,7 @@ public class ClienteApp extends Application {
         primaryStage.setMaximized(true);
         primaryStage.show();
 
+        // 4) Listar clientes
         controller.listarClientes();
     }
 

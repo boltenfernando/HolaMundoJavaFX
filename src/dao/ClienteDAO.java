@@ -1,10 +1,7 @@
 package dao;
 
 import model.Cliente;
-import util.ErrorHandler;
-
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,7 +57,6 @@ public class ClienteDAO {
             }
         }
         System.out.println("DEBUG: clientes cargados = " + lista.size());
-
         return lista;
     }
 
