@@ -1,6 +1,7 @@
 package dao;
 
 import model.Cliente;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,20 +25,26 @@ public class ClienteDAO {
                 c.setNombre(rs.getString("nombre"));
                 c.setApellido(rs.getString("apellido"));
                 c.setReferencia(rs.getString("referencia"));
+
                 Date pc = rs.getDate("proximoContacto");
                 c.setProximoContacto(pc != null ? pc.toLocalDate() : null);
+
                 c.setDireccion(rs.getString("direccion"));
                 c.setLocalidad(rs.getString("localidad"));
+
                 Date cum = rs.getDate("cumpleaños");
                 c.setCumpleaños(cum != null ? cum.toLocalDate() : null);
+
                 c.setDatosPersonales(rs.getString("datosPersonales"));
                 c.setDatosLaborales(rs.getString("datosLaborales"));
                 c.setDatosVenta(rs.getString("datosVenta"));
                 c.setDatosCompra(rs.getString("datosCompra"));
                 c.setDeseaContacto(rs.getBoolean("deseaContacto"));
                 c.setFueCliente(rs.getBoolean("fueCliente"));
+
                 Date fcv = rs.getDate("fechaCompraVenta");
                 c.setFechaCompraVenta(fcv != null ? fcv.toLocalDate() : null);
+
                 c.setEsReferidor(rs.getBoolean("esReferidor"));
                 c.setRefirioA(rs.getString("refirioA"));
                 c.setReferidoPor(rs.getString("referidoPor"));
@@ -72,17 +79,38 @@ public class ClienteDAO {
             ps.setString(1, c.getNombre());
             ps.setString(2, c.getApellido());
             ps.setString(3, c.getReferencia());
-            ps.setObject(4, c.getProximoContacto());
+
+            // 4. proximoContacto
+            if (c.getProximoContacto() != null) {
+                ps.setDate(4, Date.valueOf(c.getProximoContacto()));
+            } else {
+                ps.setNull(4, Types.DATE);
+            }
+
             ps.setString(5, c.getDireccion());
             ps.setString(6, c.getLocalidad());
-            ps.setObject(7, c.getCumpleaños());
+
+            // 7. cumpleaños
+            if (c.getCumpleaños() != null) {
+                ps.setDate(7, Date.valueOf(c.getCumpleaños()));
+            } else {
+                ps.setNull(7, Types.DATE);
+            }
+
             ps.setString(8, c.getDatosPersonales());
             ps.setString(9, c.getDatosLaborales());
             ps.setString(10, c.getDatosVenta());
             ps.setString(11, c.getDatosCompra());
             ps.setBoolean(12, c.isDeseaContacto());
             ps.setBoolean(13, c.isFueCliente());
-            ps.setObject(14, c.getFechaCompraVenta());
+
+            // 14. fechaCompraVenta
+            if (c.getFechaCompraVenta() != null) {
+                ps.setDate(14, Date.valueOf(c.getFechaCompraVenta()));
+            } else {
+                ps.setNull(14, Types.DATE);
+            }
+
             ps.setBoolean(15, c.isEsReferidor());
             ps.setString(16, c.getRefirioA());
             ps.setString(17, c.getReferidoPor());
@@ -114,17 +142,38 @@ public class ClienteDAO {
             ps.setString(1, c.getNombre());
             ps.setString(2, c.getApellido());
             ps.setString(3, c.getReferencia());
-            ps.setObject(4, c.getProximoContacto());
+
+            // 4. proximoContacto
+            if (c.getProximoContacto() != null) {
+                ps.setDate(4, Date.valueOf(c.getProximoContacto()));
+            } else {
+                ps.setNull(4, Types.DATE);
+            }
+
             ps.setString(5, c.getDireccion());
             ps.setString(6, c.getLocalidad());
-            ps.setObject(7, c.getCumpleaños());
+
+            // 7. cumpleaños
+            if (c.getCumpleaños() != null) {
+                ps.setDate(7, Date.valueOf(c.getCumpleaños()));
+            } else {
+                ps.setNull(7, Types.DATE);
+            }
+
             ps.setString(8, c.getDatosPersonales());
             ps.setString(9, c.getDatosLaborales());
             ps.setString(10, c.getDatosVenta());
             ps.setString(11, c.getDatosCompra());
             ps.setBoolean(12, c.isDeseaContacto());
             ps.setBoolean(13, c.isFueCliente());
-            ps.setObject(14, c.getFechaCompraVenta());
+
+            // 14. fechaCompraVenta
+            if (c.getFechaCompraVenta() != null) {
+                ps.setDate(14, Date.valueOf(c.getFechaCompraVenta()));
+            } else {
+                ps.setNull(14, Types.DATE);
+            }
+
             ps.setBoolean(15, c.isEsReferidor());
             ps.setString(16, c.getRefirioA());
             ps.setString(17, c.getReferidoPor());
