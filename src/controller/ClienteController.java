@@ -14,11 +14,10 @@ import model.Cliente;
 import service.RecordatorioService;
 import util.ErrorHandler;
 import util.LoggerUtil;
+import view.FormularioClienteView;
 
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -26,136 +25,15 @@ public class ClienteController {
     private final ObservableList<Cliente> clientes;
     private TableView<Cliente> tableClientes;
     private VBox panelRecordatorios;
-
-    // Form controls
-    private ComboBox<String> cmbCategoria;
-    private TextField txtNombre, txtApellido, txtReferencia;
-    private DatePicker dpProximoContacto;
-    private Separator sep1;
-    private TextField txtDireccion, txtLocalidad;
-    private DatePicker dpCumpleaños;
-    private Separator sep2;
-    private TextArea taDatosPersonales, taDatosLaborales, taDatosVenta, taDatosCompra;
-    private Separator sep3;
-    private CheckBox cbDeseaContacto, cbFueCliente;
-    private DatePicker dpFechaCompraVenta;
-    private Separator sep4;
-    private CheckBox cbEsReferidor;
-    private TextField txtRefirioA, txtReferidoPor;
-    private Separator sep5;
-    private CheckBox cbEsPadre, cbEsMadre;
-    private TextField txtHijos;
-    private Separator sep6;
-    private TextField txtTelefono, txtRedes, txtEmail;
-    private ComboBox<String> cmbOcupacion;
-    private TextField txtGustosMusicales, txtClubFutbol, txtBebidas, txtComida;
-
-    private Button btnGuardar;
+    private final FormularioClienteView formView;
 
     private static final Logger logger = LoggerUtil.getLogger();
-    private static final List<String> CATEGORIAS = Arrays.asList("A+", "A", "B", "C", "D");
-    private static final List<String> OCUPACIONES = Arrays.asList("Abogado", "Contador", "Médico", "Escribano");
 
     public ClienteController(ObservableList<Cliente> clientes) {
         this.clientes = clientes;
-        inicializarControles();
+        formView = new FormularioClienteView();
         configurarTabla();
         configurarRecordatorios();
-    }
-
-    private void inicializarControles() {
-        cmbCategoria = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(CATEGORIAS));
-        txtNombre = new TextField(); txtNombre.setPromptText("Nombre");
-        txtApellido = new TextField(); txtApellido.setPromptText("Apellido");
-        txtReferencia = new TextField(); txtReferencia.setPromptText("Referencia");
-        dpProximoContacto = new DatePicker();
-
-        sep1 = new Separator();
-
-        txtDireccion = new TextField(); txtDireccion.setPromptText("Dirección");
-        txtLocalidad = new TextField(); txtLocalidad.setPromptText("Localidad");
-        dpCumpleaños = new DatePicker();
-
-        sep2 = new Separator();
-
-        taDatosPersonales = new TextArea(); taDatosPersonales.setPromptText("Datos Personales / Familiares");
-        taDatosLaborales = new TextArea(); taDatosLaborales.setPromptText("Datos Laborales");
-        taDatosVenta = new TextArea(); taDatosVenta.setPromptText("Datos de Venta");
-        taDatosCompra = new TextArea(); taDatosCompra.setPromptText("Datos de Compra");
-
-        sep3 = new Separator();
-
-        cbDeseaContacto = new CheckBox("Quiero tener contacto");
-        cbFueCliente = new CheckBox("Es cliente");
-        dpFechaCompraVenta = new DatePicker();
-
-        sep4 = new Separator();
-
-        cbEsReferidor = new CheckBox("Es referidor?");
-        txtRefirioA = new TextField(); txtRefirioA.setPromptText("Refirió a");
-        txtReferidoPor = new TextField(); txtReferidoPor.setPromptText("Fue referido por");
-
-        sep5 = new Separator();
-
-        cbEsPadre = new CheckBox("Es padre");
-        cbEsMadre = new CheckBox("Es madre");
-        txtHijos = new TextField(); txtHijos.setPromptText("Nombre de los hijos");
-
-        sep6 = new Separator();
-
-        txtTelefono = new TextField(); txtTelefono.setPromptText("Teléfono");
-        txtRedes = new TextField(); txtRedes.setPromptText("Redes sociales");
-        txtEmail = new TextField(); txtEmail.setPromptText("Email");
-        cmbOcupacion = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(OCUPACIONES));
-        cmbOcupacion.setPromptText("Ocupación");
-
-        txtGustosMusicales = new TextField(); txtGustosMusicales.setPromptText("Gustos musicales");
-        txtClubFutbol = new TextField(); txtClubFutbol.setPromptText("Club de fútbol");
-        txtBebidas = new TextField(); txtBebidas.setPromptText("Gusto de bebidas");
-        txtComida = new TextField(); txtComida.setPromptText("Preferencias de comida");
-
-        btnGuardar = new Button();
-    }
-
-    private VBox armarPanelFormulario() {
-        VBox panelFormulario = new VBox(8,
-            new Label("Categoría:"), cmbCategoria,
-            new Label("Nombre:"), txtNombre,
-            new Label("Apellido:"), txtApellido,
-            new Label("Referencia:"), txtReferencia,
-            new Label("Próximo contacto:"), dpProximoContacto,
-            sep1,
-            new Label("Dirección:"), txtDireccion,
-            new Label("Localidad:"), txtLocalidad,
-            new Label("Fecha cumpleaños:"), dpCumpleaños,
-            sep2,
-            new Label("Datos Personales / Familiares:"), taDatosPersonales,
-            new Label("Datos Laborales:"), taDatosLaborales,
-            new Label("Datos de Venta:"), taDatosVenta,
-            new Label("Datos de Compra:"), taDatosCompra,
-            sep3,
-            cbDeseaContacto, cbFueCliente,
-            new Label("Fecha compra/venta (opcional):"), dpFechaCompraVenta,
-            sep4,
-            cbEsReferidor,
-            new Label("Refirió a:"), txtRefirioA,
-            new Label("Fue referido por:"), txtReferidoPor,
-            sep5,
-            cbEsPadre, cbEsMadre,
-            new Label("Nombre de los hijos:"), txtHijos,
-            sep6,
-            new Label("Teléfono:"), txtTelefono,
-            new Label("Redes sociales:"), txtRedes,
-            new Label("Email:"), txtEmail,
-            new Label("Ocupación:"), cmbOcupacion,
-            new Label("Gustos musicales:"), txtGustosMusicales,
-            new Label("Club de fútbol:"), txtClubFutbol,
-            new Label("Gusto de bebidas:"), txtBebidas,
-            new Label("Preferencias de comida:"), txtComida,
-            btnGuardar
-        );
-        panelFormulario.setPadding(new Insets(10));
-        return panelFormulario;
     }
 
     private void configurarTabla() {
@@ -231,67 +109,79 @@ public class ClienteController {
     public void listarClientes() {
         clientes.clear();
         try {
-            clientes.addAll(ClienteDAO.listarClientes());
+            List<Cliente> list = ClienteDAO.listarClientes();
+            clientes.addAll(list);
             tableClientes.setItems(clientes);
+            System.out.println("DEBUG: clientes cargados = " + list.size());
         } catch (SQLException ex) {
             ErrorHandler.showError("Error", ex.getMessage());
         }
     }
 
+    /**
+     * Filtra la lista de clientes según categoría, nombre y apellido.
+     */
     public void aplicarFiltros(String categoria, String nombre, String apellido) {
         tableClientes.setItems(clientes.filtered(c ->
-            (categoria.isEmpty() || c.getCategoria().equals(categoria)) &&
-            (nombre.isEmpty() || c.getNombre().toLowerCase().contains(nombre.toLowerCase())) &&
-            (apellido.isEmpty() || c.getApellido().toLowerCase().contains(apellido.toLowerCase()))
+            (categoria == null || categoria.isEmpty() || c.getCategoria().equals(categoria)) &&
+            (nombre == null || nombre.isEmpty() || c.getNombre().toLowerCase().contains(nombre.toLowerCase())) &&
+            (apellido == null || apellido.isEmpty() || c.getApellido().toLowerCase().contains(apellido.toLowerCase()))
         ));
     }
 
     public void mostrarFormularioModal(Cliente cliente) {
         System.out.println("DEBUG: abrir formulario modal");
-        VBox panelFormulario = armarPanelFormulario();
+        VBox panelFormulario = formView.getView();
 
         Stage dialog = new Stage();
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.setTitle(cliente == null ? "Nuevo Cliente" : "Editar Cliente");
 
         if (cliente != null) {
-            cmbCategoria.setValue(cliente.getCategoria());
-            txtNombre.setText(cliente.getNombre());
-            txtApellido.setText(cliente.getApellido());
-            txtReferencia.setText(cliente.getReferencia());
-            dpProximoContacto.setValue(cliente.getProximoContacto());
-            txtDireccion.setText(cliente.getDireccion());
-            txtLocalidad.setText(cliente.getLocalidad());
-            dpCumpleaños.setValue(cliente.getCumpleaños());
-            taDatosPersonales.setText(cliente.getDatosPersonales());
-            taDatosLaborales.setText(cliente.getDatosLaborales());
-            taDatosVenta.setText(cliente.getDatosVenta());
-            taDatosCompra.setText(cliente.getDatosCompra());
-            cbDeseaContacto.setSelected(cliente.isDeseaContacto());
-            cbFueCliente.setSelected(cliente.isFueCliente());
-            dpFechaCompraVenta.setValue(cliente.getFechaCompraVenta());
-            cbEsReferidor.setSelected(cliente.isEsReferidor());
-            txtRefirioA.setText(cliente.getRefirioA());
-            txtReferidoPor.setText(cliente.getReferidoPor());
-            cbEsPadre.setSelected(cliente.isEsPadre());
-            cbEsMadre.setSelected(cliente.isEsMadre());
-            txtHijos.setText(cliente.getNombreHijos());
-            txtTelefono.setText(cliente.getTelefono());
-            txtRedes.setText(cliente.getRedesSociales());
-            txtEmail.setText(cliente.getEmail());
-            cmbOcupacion.setValue(cliente.getOcupacion());
-            txtGustosMusicales.setText(cliente.getGustosMusicales());
-            txtClubFutbol.setText(cliente.getClubFutbol());
-            txtBebidas.setText(cliente.getGustoBebidas());
-            txtComida.setText(cliente.getPreferenciasComida());
+            // Precarga campos
+            formView.cmbCategoria.setValue(cliente.getCategoria());
+            formView.txtNombre.setText(cliente.getNombre());
+            formView.txtApellido.setText(cliente.getApellido());
+            formView.txtReferencia.setText(cliente.getReferencia());
+            formView.dpProximoContacto.setValue(cliente.getProximoContacto());
+            formView.txtDireccion.setText(cliente.getDireccion());
+            formView.txtLocalidad.setText(cliente.getLocalidad());
+            formView.dpCumpleaños.setValue(cliente.getCumpleaños());
+            formView.taDatosPersonales.setText(cliente.getDatosPersonales());
+            formView.taDatosLaborales.setText(cliente.getDatosLaborales());
+            formView.taDatosVenta.setText(cliente.getDatosVenta());
+            formView.taDatosCompra.setText(cliente.getDatosCompra());
+            formView.cbDeseaContacto.setSelected(cliente.isDeseaContacto());
+            formView.cbFueCliente.setSelected(cliente.isFueCliente());
+            formView.dpFechaCompraVenta.setValue(cliente.getFechaCompraVenta());
+            formView.cbEsReferidor.setSelected(cliente.isEsReferidor());
+            formView.txtRefirioA.setText(cliente.getRefirioA());
+            formView.txtReferidoPor.setText(cliente.getReferidoPor());
+            formView.cbEsPadre.setSelected(cliente.isEsPadre());
+            formView.cbEsMadre.setSelected(cliente.isEsMadre());
+            formView.txtHijos.setText(cliente.getNombreHijos());
+            formView.txtTelefono.setText(cliente.getTelefono());
+            formView.txtRedes.setText(cliente.getRedesSociales());
+            formView.txtEmail.setText(cliente.getEmail());
+            formView.cmbOcupacion.setValue(cliente.getOcupacion());
+            formView.txtGustosMusicales.setText(cliente.getGustosMusicales());
+            formView.txtClubFutbol.setText(cliente.getClubFutbol());
+            formView.txtBebidas.setText(cliente.getGustoBebidas());
+            formView.txtComida.setText(cliente.getPreferenciasComida());
+            formView.btnGuardar.setText("Actualizar");
         } else {
+            formView.btnGuardar.setText("Guardar");
             limpiarCampos();
         }
 
-        btnGuardar.setText(cliente == null ? "Guardar" : "Actualizar");
-        btnGuardar.setOnAction(e -> {
-            boolean ok = cliente == null ? guardarCliente() : actualizarCliente(cliente);
-            if (ok) dialog.close();
+        formView.btnGuardar.setOnAction(e -> {
+            boolean ok = (cliente == null) ? guardarCliente() : actualizarCliente(cliente);
+            if (ok) {
+                Alert info = new Alert(Alert.AlertType.INFORMATION,
+                    cliente == null ? "Cliente creado." : "Cliente actualizado.");
+                info.showAndWait();
+                dialog.close();
+            }
         });
 
         ScrollPane scroll = new ScrollPane(panelFormulario);
@@ -328,9 +218,9 @@ public class ClienteController {
     }
 
     private Cliente buildClienteFromForm(int id) {
-        String categoria = cmbCategoria.getValue();
-        String nombre = txtNombre.getText();
-        String apellido = txtApellido.getText();
+        String categoria = formView.cmbCategoria.getValue();
+        String nombre = formView.txtNombre.getText();
+        String apellido = formView.txtApellido.getText();
         if (categoria == null || nombre.isEmpty() || apellido.isEmpty()) {
             ErrorHandler.showError("Error", "Categoría, Nombre y Apellido son obligatorios.");
             return null;
@@ -340,65 +230,65 @@ public class ClienteController {
         c.setCategoria(categoria);
         c.setNombre(nombre);
         c.setApellido(apellido);
-        c.setReferencia(txtReferencia.getText());
-        c.setProximoContacto(dpProximoContacto.getValue());
-        c.setDireccion(txtDireccion.getText());
-        c.setLocalidad(txtLocalidad.getText());
-        c.setCumpleaños(dpCumpleaños.getValue());
-        c.setDatosPersonales(taDatosPersonales.getText());
-        c.setDatosLaborales(taDatosLaborales.getText());
-        c.setDatosVenta(taDatosVenta.getText());
-        c.setDatosCompra(taDatosCompra.getText());
-        c.setDeseaContacto(cbDeseaContacto.isSelected());
-        c.setFueCliente(cbFueCliente.isSelected());
-        c.setFechaCompraVenta(dpFechaCompraVenta.getValue());
-        c.setEsReferidor(cbEsReferidor.isSelected());
-        c.setRefirioA(txtRefirioA.getText());
-        c.setReferidoPor(txtReferidoPor.getText());
-        c.setEsPadre(cbEsPadre.isSelected());
-        c.setEsMadre(cbEsMadre.isSelected());
-        c.setNombreHijos(txtHijos.getText());
-        c.setTelefono(txtTelefono.getText());
-        c.setRedesSociales(txtRedes.getText());
-        c.setEmail(txtEmail.getText());
-        c.setOcupacion(cmbOcupacion.getValue());
-        c.setGustosMusicales(txtGustosMusicales.getText());
-        c.setClubFutbol(txtClubFutbol.getText());
-        c.setGustoBebidas(txtBebidas.getText());
-        c.setPreferenciasComida(txtComida.getText());
+        c.setReferencia(formView.txtReferencia.getText());
+        c.setProximoContacto(formView.dpProximoContacto.getValue());
+        c.setDireccion(formView.txtDireccion.getText());
+        c.setLocalidad(formView.txtLocalidad.getText());
+        c.setCumpleaños(formView.dpCumpleaños.getValue());
+        c.setDatosPersonales(formView.taDatosPersonales.getText());
+        c.setDatosLaborales(formView.taDatosLaborales.getText());
+        c.setDatosVenta(formView.taDatosVenta.getText());
+        c.setDatosCompra(formView.taDatosCompra.getText());
+        c.setDeseaContacto(formView.cbDeseaContacto.isSelected());
+        c.setFueCliente(formView.cbFueCliente.isSelected());
+        c.setFechaCompraVenta(formView.dpFechaCompraVenta.getValue());
+        c.setEsReferidor(formView.cbEsReferidor.isSelected());
+        c.setRefirioA(formView.txtRefirioA.getText());
+        c.setReferidoPor(formView.txtReferidoPor.getText());
+        c.setEsPadre(formView.cbEsPadre.isSelected());
+        c.setEsMadre(formView.cbEsMadre.isSelected());
+        c.setNombreHijos(formView.txtHijos.getText());
+        c.setTelefono(formView.txtTelefono.getText());
+        c.setRedesSociales(formView.txtRedes.getText());
+        c.setEmail(formView.txtEmail.getText());
+        c.setOcupacion(formView.cmbOcupacion.getValue());
+        c.setGustosMusicales(formView.txtGustosMusicales.getText());
+        c.setClubFutbol(formView.txtClubFutbol.getText());
+        c.setGustoBebidas(formView.txtBebidas.getText());
+        c.setPreferenciasComida(formView.txtComida.getText());
         return c;
     }
 
     public void limpiarCampos() {
-        cmbCategoria.setValue(null);
-        txtNombre.clear();
-        txtApellido.clear();
-        txtReferencia.clear();
-        dpProximoContacto.setValue(null);
-        txtDireccion.clear();
-        txtLocalidad.clear();
-        dpCumpleaños.setValue(null);
-        taDatosPersonales.clear();
-        taDatosLaborales.clear();
-        taDatosVenta.clear();
-        taDatosCompra.clear();
-        cbDeseaContacto.setSelected(false);
-        cbFueCliente.setSelected(false);
-        dpFechaCompraVenta.setValue(null);
-        cbEsReferidor.setSelected(false);
-        txtRefirioA.clear();
-        txtReferidoPor.clear();
-        cbEsPadre.setSelected(false);
-        cbEsMadre.setSelected(false);
-        txtHijos.clear();
-        txtTelefono.clear();
-        txtRedes.clear();
-        txtEmail.clear();
-        cmbOcupacion.setValue(null);
-        txtGustosMusicales.clear();
-        txtClubFutbol.clear();
-        txtBebidas.clear();
-        txtComida.clear();
+        formView.cmbCategoria.setValue(null);
+        formView.txtNombre.clear();
+        formView.txtApellido.clear();
+        formView.txtReferencia.clear();
+        formView.dpProximoContacto.setValue(null);
+        formView.txtDireccion.clear();
+        formView.txtLocalidad.clear();
+        formView.dpCumpleaños.setValue(null);
+        formView.taDatosPersonales.clear();
+        formView.taDatosLaborales.clear();
+        formView.taDatosVenta.clear();
+        formView.taDatosCompra.clear();
+        formView.cbDeseaContacto.setSelected(false);
+        formView.cbFueCliente.setSelected(false);
+        formView.dpFechaCompraVenta.setValue(null);
+        formView.cbEsReferidor.setSelected(false);
+        formView.txtRefirioA.clear();
+        formView.txtReferidoPor.clear();
+        formView.cbEsPadre.setSelected(false);
+        formView.cbEsMadre.setSelected(false);
+        formView.txtHijos.clear();
+        formView.txtTelefono.clear();
+        formView.txtRedes.clear();
+        formView.txtEmail.clear();
+        formView.cmbOcupacion.setValue(null);
+        formView.txtGustosMusicales.clear();
+        formView.txtClubFutbol.clear();
+        formView.txtBebidas.clear();
+        formView.txtComida.clear();
     }
 
     private void eliminarConfirmacion(Cliente cliente) {
