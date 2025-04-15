@@ -23,6 +23,7 @@ public class ClienteApp extends Application {
             e.printStackTrace();
         }
 
+        // Toda la UI la construye el controlador
         new ClienteController(primaryStage, clientes);
     }
 
