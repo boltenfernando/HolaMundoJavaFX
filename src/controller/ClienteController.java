@@ -39,14 +39,14 @@ public class ClienteController {
         this.clientes = clientes;
 
         formView = new FormularioClienteView();
-        btnExportarCsv = formView.getBtnExportarCsv();
-        btnImportarCsv = formView.getBtnImportarCsv();
+        btnExportarCsv = new Button("Exportar CSV");
+        btnImportarCsv = new Button("Importar CSV");
 
         configurarTabla();
         configurarRecordatorios();
         configurarEventosCsv();
 
-        HBox toolbar = crearToolbar();
+        VBox toolbar = crearToolbar();
 
         BorderPane root = new BorderPane();
         root.setTop(toolbar);
@@ -76,7 +76,7 @@ public class ClienteController {
         tableClientes.getColumns().addAll(colCat, colNom, colApe, colRef);
     }
 
-    private HBox crearToolbar() {
+    private VBox crearToolbar() {
         Button btnNuevo = new Button("Nuevo Cliente");
         btnNuevo.setOnAction(e -> mostrarFormularioModal(null));
 
@@ -93,9 +93,9 @@ public class ClienteController {
             cbCategoria.setValue(""); tfNombre.clear(); tfApellido.clear(); listarClientes();
         });
 
-        HBox filtros = new HBox(5, new Label("Categoría:"), cbCategoria, new Label("Nombre:"), tfNombre, new Label("Apellido:"), tfApellido, btnFiltrar, btnLimpiar);
-        Region spacer = new Region(); HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox toolbar = new HBox(10, btnNuevo, btnExportarCsv, btnImportarCsv, filtros, spacer, panelRecordatorios);
+        HBox fila1 = new HBox(10, btnNuevo, btnExportarCsv, btnImportarCsv);
+        HBox fila2 = new HBox(5, new Label("Categoría:"), cbCategoria, new Label("Nombre:"), tfNombre, new Label("Apellido:"), tfApellido, btnFiltrar, btnLimpiar);
+        VBox toolbar = new VBox(5, fila1, fila2);
         toolbar.setPadding(new Insets(10));
         return toolbar;
     }
