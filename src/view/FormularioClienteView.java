@@ -2,111 +2,218 @@ package view;
 
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-
-import java.util.Arrays;
-import java.util.List;
+import model.Cliente;
 
 public class FormularioClienteView {
-    public final ComboBox<String> cmbCategoria = new ComboBox<>();
-    public final TextField txtNombre = new TextField();
-    public final TextField txtApellido = new TextField();
-    public final TextField txtReferencia = new TextField();
-    public final DatePicker dpProximoContacto = new DatePicker();
-    public final TextField txtDireccion = new TextField();
-    public final TextField txtLocalidad = new TextField();
-    public final DatePicker dpCumpleaños = new DatePicker();
-    public final TextArea taDatosPersonales = new TextArea();
-    public final TextArea taDatosLaborales = new TextArea();
-    public final TextArea taDatosVenta = new TextArea();
-    public final TextArea taDatosCompra = new TextArea();
-    public final CheckBox cbDeseaContacto = new CheckBox("Quiero tener contacto");
-    public final CheckBox cbFueCliente = new CheckBox("Es cliente");
-    public final DatePicker dpFechaCompraVenta = new DatePicker();
-    public final CheckBox cbEsReferidor = new CheckBox("Es referidor?");
-    public final TextField txtRefirioA = new TextField();
-    public final TextField txtReferidoPor = new TextField();
-    public final CheckBox cbEsPadre = new CheckBox("Es padre");
-    public final CheckBox cbEsMadre = new CheckBox("Es madre");
-    public final TextField txtHijos = new TextField();
-    public final TextField txtTelefono = new TextField();
-    public final TextField txtRedes = new TextField();
-    public final TextField txtEmail = new TextField();
-    public final ComboBox<String> cmbOcupacion = new ComboBox<>();
-    public final TextField txtGustosMusicales = new TextField();
-    public final TextField txtClubFutbol = new TextField();
-    public final TextField txtBebidas = new TextField();
-    public final TextField txtComida = new TextField();
-    public final Button btnGuardar = new Button();
 
-    private static final List<String> CATEGORIAS = Arrays.asList("A+", "A", "B", "C", "D");
-    private static final List<String> OCUPACIONES = Arrays.asList("Abogado", "Contador", "Médico", "Escribano");
+    private VBox panelFormulario;
+
+    public ChoiceBox<String> cmbCategoria;
+    public TextField txtNombre;
+    public TextField txtApellido;
+    public TextField txtReferencia;
+    public DatePicker dpProximoContacto;
+    public TextField txtDireccion;
+    public TextField txtLocalidad;
+    public DatePicker dpCumpleaños;
+    public TextArea taDatosPersonales;
+    public TextArea taDatosLaborales;
+    public TextArea taDatosVenta;
+    public TextArea taDatosCompra;
+    public CheckBox cbDeseaContacto;
+    public CheckBox cbFueCliente;
+    public DatePicker dpFechaCompraVenta;
+    public CheckBox cbEsReferidor;
+    public TextField txtRefirioA;
+    public TextField txtReferidoPor;
+    public CheckBox cbEsPadre;
+    public CheckBox cbEsMadre;
+    public TextField txtHijos;
+    public TextField txtTelefono;
+    public TextField txtRedes;
+    public TextField txtEmail;
+    public ChoiceBox<String> cmbOcupacion;
+    public TextField txtGustosMusicales;
+    public TextField txtClubFutbol;
+    public TextField txtBebidas;
+    public TextField txtComida;
+    private Button btnGuardar;
+
+    private Button btnExportarCsv;
+    private Button btnImportarCsv;
 
     public FormularioClienteView() {
-        cmbCategoria.getItems().addAll(CATEGORIAS);
-        cmbCategoria.setPromptText("Categoría");
-        txtNombre.setPromptText("Nombre");
-        txtApellido.setPromptText("Apellido");
-        txtReferencia.setPromptText("Referencia");
-        txtDireccion.setPromptText("Dirección");
-        txtLocalidad.setPromptText("Localidad");
-        taDatosPersonales.setPromptText("Datos Personales / Familiares");
-        taDatosLaborales.setPromptText("Datos Laborales");
-        taDatosVenta.setPromptText("Datos de Venta");
-        taDatosCompra.setPromptText("Datos de Compra");
-        txtRefirioA.setPromptText("Refirió a");
-        txtReferidoPor.setPromptText("Fue referido por");
-        txtHijos.setPromptText("Nombre de los hijos");
-        txtTelefono.setPromptText("Teléfono");
-        txtRedes.setPromptText("Redes sociales");
-        txtEmail.setPromptText("Email");
-        cmbOcupacion.getItems().addAll(OCUPACIONES);
-        cmbOcupacion.setPromptText("Ocupación");
-        txtGustosMusicales.setPromptText("Gustos musicales");
-        txtClubFutbol.setPromptText("Club de fútbol");
-        txtBebidas.setPromptText("Gusto de bebidas");
-        txtComida.setPromptText("Preferencias de comida");
-        btnGuardar.setText("Guardar");
-    }
+        panelFormulario = new VBox(10);
+        panelFormulario.setPadding(new Insets(10));
 
-    public VBox getView() {
-        VBox v = new VBox(8,
+        cmbCategoria = new ChoiceBox<>();
+        cmbCategoria.getItems().addAll("", "A+", "A", "B", "C", "D");
+        txtNombre = new TextField(); txtNombre.setPromptText("Nombre");
+        txtApellido = new TextField(); txtApellido.setPromptText("Apellido");
+        txtReferencia = new TextField(); txtReferencia.setPromptText("Referencia");
+        dpProximoContacto = new DatePicker();
+        txtDireccion = new TextField(); txtDireccion.setPromptText("Dirección");
+        txtLocalidad = new TextField(); txtLocalidad.setPromptText("Localidad");
+        dpCumpleaños = new DatePicker();
+        taDatosPersonales = new TextArea(); taDatosPersonales.setPromptText("Datos personales");
+        taDatosLaborales = new TextArea(); taDatosLaborales.setPromptText("Datos laborales");
+        taDatosVenta = new TextArea(); taDatosVenta.setPromptText("Datos de venta");
+        taDatosCompra = new TextArea(); taDatosCompra.setPromptText("Datos de compra");
+        cbDeseaContacto = new CheckBox("Desea contacto");
+        cbFueCliente = new CheckBox("Fue cliente");
+        dpFechaCompraVenta = new DatePicker();
+        cbEsReferidor = new CheckBox("Es referidor");
+        txtRefirioA = new TextField(); txtRefirioA.setPromptText("Refirió a");
+        txtReferidoPor = new TextField(); txtReferidoPor.setPromptText("Referido por");
+        cbEsPadre = new CheckBox("Es padre");
+        cbEsMadre = new CheckBox("Es madre");
+        txtHijos = new TextField(); txtHijos.setPromptText("Nombre hijos");
+        txtTelefono = new TextField(); txtTelefono.setPromptText("Teléfono");
+        txtRedes = new TextField(); txtRedes.setPromptText("Redes sociales");
+        txtEmail = new TextField(); txtEmail.setPromptText("Email");
+        cmbOcupacion = new ChoiceBox<>();
+        txtGustosMusicales = new TextField(); txtGustosMusicales.setPromptText("Gustos musicales");
+        txtClubFutbol = new TextField(); txtClubFutbol.setPromptText("Club de fútbol");
+        txtBebidas = new TextField(); txtBebidas.setPromptText("Gusto de bebidas");
+        txtComida = new TextField(); txtComida.setPromptText("Preferencias comida");
+        btnGuardar = new Button("Guardar");
+
+        panelFormulario.getChildren().addAll(
             new Label("Categoría:"), cmbCategoria,
             new Label("Nombre:"), txtNombre,
             new Label("Apellido:"), txtApellido,
             new Label("Referencia:"), txtReferencia,
-            new Label("Próximo contacto:"), dpProximoContacto,
-            new Separator(),
+            new Label("Próximo Contacto:"), dpProximoContacto,
             new Label("Dirección:"), txtDireccion,
             new Label("Localidad:"), txtLocalidad,
-            new Label("Fecha cumpleaños:"), dpCumpleaños,
-            new Separator(),
-            new Label("Datos Personales / Familiares:"), taDatosPersonales,
+            new Label("Cumpleaños:"), dpCumpleaños,
+            new Label("Datos Personales:"), taDatosPersonales,
             new Label("Datos Laborales:"), taDatosLaborales,
-            new Label("Datos de Venta:"), taDatosVenta,
-            new Label("Datos de Compra:"), taDatosCompra,
-            new Separator(),
+            new Label("Datos Venta:"), taDatosVenta,
+            new Label("Datos Compra:"), taDatosCompra,
             cbDeseaContacto, cbFueCliente,
-            new Label("Fecha compra/venta (opcional):"), dpFechaCompraVenta,
-            new Separator(),
+            new Label("Fecha Compra/Venta:"), dpFechaCompraVenta,
             cbEsReferidor,
             new Label("Refirió a:"), txtRefirioA,
-            new Label("Fue referido por:"), txtReferidoPor,
-            new Separator(),
+            new Label("Referido por:"), txtReferidoPor,
             cbEsPadre, cbEsMadre,
-            new Label("Nombre de los hijos:"), txtHijos,
-            new Separator(),
+            new Label("Nombre Hijos:"), txtHijos,
             new Label("Teléfono:"), txtTelefono,
-            new Label("Redes sociales:"), txtRedes,
+            new Label("Redes Sociales:"), txtRedes,
             new Label("Email:"), txtEmail,
             new Label("Ocupación:"), cmbOcupacion,
-            new Label("Gustos musicales:"), txtGustosMusicales,
-            new Label("Club de fútbol:"), txtClubFutbol,
-            new Label("Gusto de bebidas:"), txtBebidas,
-            new Label("Preferencias de comida:"), txtComida,
+            new Label("Gustos Musicales:"), txtGustosMusicales,
+            new Label("Club de Fútbol:"), txtClubFutbol,
+            new Label("Gusto de Bebidas:"), txtBebidas,
+            new Label("Preferencias Comida:"), txtComida,
             btnGuardar
         );
-        v.setPadding(new Insets(10));
-        return v;
+
+        // Botones CSV al final
+        btnExportarCsv = new Button("Exportar a CSV");
+        btnImportarCsv = new Button("Importar desde CSV");
+        HBox botonesCsv = new HBox(10, btnExportarCsv, btnImportarCsv);
+        botonesCsv.setPadding(new Insets(10));
+        panelFormulario.getChildren().add(botonesCsv);
+    }
+
+    public VBox getView() {
+        return panelFormulario;
+    }
+
+    public Button getBtnGuardar() {
+        return btnGuardar;
+    }
+
+    public Button getBtnExportarCsv() {
+        return btnExportarCsv;
+    }
+
+    public Button getBtnImportarCsv() {
+        return btnImportarCsv;
+    }
+
+    public void precargar(Cliente cliente) {
+        if (cliente != null) {
+            cmbCategoria.setValue(cliente.getCategoria());
+            txtNombre.setText(cliente.getNombre());
+            txtApellido.setText(cliente.getApellido());
+            txtReferencia.setText(cliente.getReferencia());
+            dpProximoContacto.setValue(cliente.getProximoContacto());
+            txtDireccion.setText(cliente.getDireccion());
+            txtLocalidad.setText(cliente.getLocalidad());
+            dpCumpleaños.setValue(cliente.getCumpleaños());
+            taDatosPersonales.setText(cliente.getDatosPersonales());
+            taDatosLaborales.setText(cliente.getDatosLaborales());
+            taDatosVenta.setText(cliente.getDatosVenta());
+            taDatosCompra.setText(cliente.getDatosCompra());
+            cbDeseaContacto.setSelected(cliente.isDeseaContacto());
+            cbFueCliente.setSelected(cliente.isFueCliente());
+            dpFechaCompraVenta.setValue(cliente.getFechaCompraVenta());
+            cbEsReferidor.setSelected(cliente.isEsReferidor());
+            txtRefirioA.setText(cliente.getRefirioA());
+            txtReferidoPor.setText(cliente.getReferidoPor());
+            cbEsPadre.setSelected(cliente.isEsPadre());
+            cbEsMadre.setSelected(cliente.isEsMadre());
+            txtHijos.setText(cliente.getNombreHijos());
+            txtTelefono.setText(cliente.getTelefono());
+            txtRedes.setText(cliente.getRedesSociales());
+            txtEmail.setText(cliente.getEmail());
+            cmbOcupacion.setValue(cliente.getOcupacion());
+            txtGustosMusicales.setText(cliente.getGustosMusicales());
+            txtClubFutbol.setText(cliente.getClubFutbol());
+            txtBebidas.setText(cliente.getGustoBebidas());
+            txtComida.setText(cliente.getPreferenciasComida());
+        } else {
+            limpiar();
+        }
+    }
+
+    public boolean isNew() {
+        return txtNombre.getText().isEmpty() && txtApellido.getText().isEmpty();
+    }
+
+    public boolean guardar() {
+        // Lógica para guardar
+        return true;
+    }
+
+    public boolean actualizar() {
+        // Lógica para actualizar
+        return true;
+    }
+
+    private void limpiar() {
+        cmbCategoria.setValue(null);
+        txtNombre.clear();
+        txtApellido.clear();
+        txtReferencia.clear();
+        dpProximoContacto.setValue(null);
+        txtDireccion.clear();
+        txtLocalidad.clear();
+        dpCumpleaños.setValue(null);
+        taDatosPersonales.clear();
+        taDatosLaborales.clear();
+        taDatosVenta.clear();
+        taDatosCompra.clear();
+        cbDeseaContacto.setSelected(false);
+        cbFueCliente.setSelected(false);
+        dpFechaCompraVenta.setValue(null);
+        cbEsReferidor.setSelected(false);
+        txtRefirioA.clear();
+        txtReferidoPor.clear();
+        cbEsPadre.setSelected(false);
+        cbEsMadre.setSelected(false);
+        txtHijos.clear();
+        txtTelefono.clear();
+        txtRedes.clear();
+        txtEmail.clear();
+        cmbOcupacion.setValue(null);
+        txtGustosMusicales.clear();
+        txtClubFutbol.clear();
+        txtBebidas.clear();
+        txtComida.clear();
     }
 }

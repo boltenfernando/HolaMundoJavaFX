@@ -78,7 +78,6 @@ public class ClienteDAO {
             ps.setString(1, c.getNombre());
             ps.setString(2, c.getApellido());
             ps.setString(3, c.getReferencia());
-            // fechas como texto ISO
             ps.setString(4, c.getProximoContacto() != null ? c.getProximoContacto().toString() : null);
             ps.setString(5, c.getDireccion());
             ps.setString(6, c.getLocalidad());
@@ -158,6 +157,14 @@ public class ClienteDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             ps.executeUpdate();
+        }
+    }
+
+    public static void guardarOActualizar(Cliente c) throws SQLException {
+        if (c.getId() == 0) {
+            agregarCliente(c);
+        } else {
+            modificarCliente(c);
         }
     }
 }

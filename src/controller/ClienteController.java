@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.Cliente;
@@ -16,7 +17,9 @@ import util.ErrorHandler;
 import util.LoggerUtil;
 import view.FormularioClienteView;
 
+import java.io.*;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.logging.Logger;
@@ -26,14 +29,37 @@ public class ClienteController {
     private TableView<Cliente> tableClientes;
     private VBox panelRecordatorios;
     private final FormularioClienteView formView;
+    private final Stage primaryStage;
+    private final Button btnExportarCsv;
+    private final Button btnImportarCsv;
 
     private static final Logger logger = LoggerUtil.getLogger();
 
-    public ClienteController(ObservableList<Cliente> clientes) {
+    public ClienteController(Stage stage, ObservableList<Cliente> clientes) {
+        this.primaryStage = stage;
         this.clientes = clientes;
         formView = new FormularioClienteView();
+        btnExportarCsv = formView.getBtnExportarCsv();
+        btnImportarCsv = formView.getBtnImportarCsv();
+
         configurarTabla();
         configurarRecordatorios();
+        configurarEventosCsv();
+
+        BorderPane root = new BorderPane();
+        root.setLeft(formView.getView());
+        root.setCenter(tableClientes);
+        root.setTop(panelRecordatorios);
+        HBox botonesCsv = new HBox(10, btnExportarCsv, btnImportarCsv);
+        botonesCsv.setPadding(new Insets(10));
+        root.setBottom(botonesCsv);
+        root.setPadding(new Insets(10));
+
+        primaryStage.setScene(new Scene(root, 1200, 700));
+        primaryStage.setTitle("Gestión de Clientes");
+        primaryStage.show();
+
+        listarClientes();
     }
 
     private void configurarTabla() {
@@ -50,7 +76,11 @@ public class ClienteController {
         TableColumn<Cliente, Void> colVer = new TableColumn<>("VER");
         colVer.setCellFactory(tc -> new TableCell<>() {
             private final Button btn = new Button("VER");
-            { btn.setOnAction(e -> mostrarDetalle(getTableView().getItems().get(getIndex()))); }
+            {
+                btn.setOnAction(e ->
+                    ClienteController.this.mostrarDetalle(getTableView().getItems().get(getIndex()))
+                );
+            }
             @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : btn);
@@ -60,7 +90,11 @@ public class ClienteController {
         TableColumn<Cliente, Void> colEditar = new TableColumn<>("EDITAR");
         colEditar.setCellFactory(tc -> new TableCell<>() {
             private final Button btn = new Button("EDITAR");
-            { btn.setOnAction(e -> mostrarFormularioModal(getTableView().getItems().get(getIndex()))); }
+            {
+                btn.setOnAction(e ->
+                    ClienteController.this.mostrarFormularioModal(getTableView().getItems().get(getIndex()))
+                );
+            }
             @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : btn);
@@ -70,7 +104,11 @@ public class ClienteController {
         TableColumn<Cliente, Void> colEliminar = new TableColumn<>("ELIMINAR");
         colEliminar.setCellFactory(tc -> new TableCell<>() {
             private final Button btn = new Button("ELIMINAR");
-            { btn.setOnAction(e -> eliminarConfirmacion(getTableView().getItems().get(getIndex()))); }
+            {
+                btn.setOnAction(e ->
+                    ClienteController.this.eliminarConfirmacion(getTableView().getItems().get(getIndex()))
+                );
+            }
             @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : btn);
@@ -82,18 +120,10 @@ public class ClienteController {
             new ReadOnlyStringWrapper(String.join(", ", RecordatorioService.getRecordatorios(c.getValue())))
         );
 
-        tableClientes.getColumns().addAll(colCat, colNom, colApe, colRef, colVer, colEditar, colEliminar, colRec);
-
-        tableClientes.setRowFactory(tv -> new TableRow<>() {
-            @Override protected void updateItem(Cliente item, boolean empty) {
-                super.updateItem(item, empty);
-                if (item != null && !RecordatorioService.getRecordatorios(item).isEmpty()) {
-                    setStyle("-fx-background-color: rgba(255,255,0,0.3);");
-                } else {
-                    setStyle("");
-                }
-            }
-        });
+        tableClientes.getColumns().addAll(
+            colCat, colNom, colApe, colRef,
+            colVer, colEditar, colEliminar, colRec
+        );
     }
 
     private void configurarRecordatorios() {
@@ -103,211 +133,129 @@ public class ClienteController {
         panelRecordatorios.getChildren().add(btnLupa);
     }
 
-    public TableView<Cliente> obtenerTablaClientes() { return tableClientes; }
-    public VBox obtenerPanelRecordatoriosConLupa() { return panelRecordatorios; }
+    private void configurarEventosCsv() {
+        btnExportarCsv.setOnAction(e -> {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Guardar CSV de Clientes");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+            chooser.setInitialFileName("clientes.csv");
+            File file = chooser.showSaveDialog(primaryStage);
+            if (file != null) exportarCsv(file);
+        });
+
+        btnImportarCsv.setOnAction(e -> {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Seleccionar CSV de Clientes");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+            File file = chooser.showOpenDialog(primaryStage);
+            if (file != null) {
+                importarCsv(file);
+                listarClientes();
+            }
+        });
+    }
+
+    private void exportarCsv(File file) {
+        try {
+            List<Cliente> lista = ClienteDAO.listarClientes();
+            try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
+                pw.println("id,nombre,apellido,referencia,proximoContacto,direccion,localidad,cumpleaños," +
+                           "datosPersonales,datosLaborales,datosVenta,datosCompra,deseaContacto,fueCliente," +
+                           "fechaCompraVenta,esReferidor,refirioA,referidoPor,esPadre,esMadre,nombreHijos," +
+                           "telefono,redesSociales,email,ocupacion,gustosMusicales,clubFutbol,gustoBebidas," +
+                           "preferenciasComida,categoria");
+                for (Cliente c : lista) {
+                    pw.printf("%d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%b,%b,%s,%b,%s,%s,%b,%b,%s,%s,%s,%s,%s,%s,%s,%s,%s%n",
+                        c.getId(), c.getNombre(), c.getApellido(), c.getReferencia(),
+                        c.getProximoContacto(), c.getDireccion(), c.getLocalidad(),
+                        c.getCumpleaños(), c.getDatosPersonales(), c.getDatosLaborales(),
+                        c.getDatosVenta(), c.getDatosCompra(), c.isDeseaContacto(), c.isFueCliente(),
+                        c.getFechaCompraVenta(), c.isEsReferidor(), c.getRefirioA(), c.getReferidoPor(),
+                        c.isEsPadre(), c.isEsMadre(), c.getNombreHijos(), c.getTelefono(),
+                        c.getRedesSociales(), c.getEmail(), c.getOcupacion(),
+                        c.getGustosMusicales(), c.getClubFutbol(), c.getGustoBebidas(),
+                        c.getPreferenciasComida(), c.getCategoria());
+                }
+            }
+        } catch (Exception ex) {
+            ErrorHandler.showError("Error exportando CSV", ex.getMessage());
+        }
+    }
+
+    private void importarCsv(File file) {
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            br.readLine();
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] cols = line.split(",", -1);
+                Cliente c = new Cliente();
+                if (!cols[0].isEmpty()) c.setId(Integer.parseInt(cols[0]));
+                c.setNombre(cols[1]);
+                c.setApellido(cols[2]);
+                c.setReferencia(cols[3]);
+                c.setProximoContacto(!cols[4].isEmpty() ? LocalDate.parse(cols[4]) : null);
+                c.setDireccion(cols[5]);
+                c.setLocalidad(cols[6]);
+                c.setCumpleaños(!cols[7].isEmpty() ? LocalDate.parse(cols[7]) : null);
+                c.setDatosPersonales(cols[8]);
+                c.setDatosLaborales(cols[9]);
+                c.setDatosVenta(cols[10]);
+                c.setDatosCompra(cols[11]);
+                c.setDeseaContacto(Boolean.parseBoolean(cols[12]));
+                c.setFueCliente(Boolean.parseBoolean(cols[13]));
+                c.setFechaCompraVenta(!cols[14].isEmpty() ? LocalDate.parse(cols[14]) : null);
+                c.setEsReferidor(Boolean.parseBoolean(cols[15]));
+                c.setRefirioA(cols[16]);
+                c.setReferidoPor(cols[17]);
+                c.setEsPadre(Boolean.parseBoolean(cols[18]));
+                c.setEsMadre(Boolean.parseBoolean(cols[19]));
+                c.setNombreHijos(cols[20]);
+                c.setTelefono(cols[21]);
+                c.setRedesSociales(cols[22]);
+                c.setEmail(cols[23]);
+                c.setOcupacion(cols[24]);
+                c.setGustosMusicales(cols[25]);
+                c.setClubFutbol(cols[26]);
+                c.setGustoBebidas(cols[27]);
+                c.setPreferenciasComida(cols[28]);
+                c.setCategoria(cols[29]);
+                ClienteDAO.guardarOActualizar(c);
+            }
+        } catch (Exception ex) {
+            ErrorHandler.showError("Error importando CSV", ex.getMessage());
+        }
+    }
 
     public void listarClientes() {
         clientes.clear();
         try {
-            List<Cliente> list = ClienteDAO.listarClientes();
-            clientes.addAll(list);
+            clientes.addAll(ClienteDAO.listarClientes());
             tableClientes.setItems(clientes);
-            System.out.println("DEBUG: clientes cargados = " + list.size());
         } catch (SQLException ex) {
-            ErrorHandler.showError("Error", ex.getMessage());
+            ErrorHandler.showError("Error al listar clientes", ex.getMessage());
         }
-    }
-
-    /**
-     * Filtra la lista de clientes según categoría, nombre y apellido.
-     */
-    public void aplicarFiltros(String categoria, String nombre, String apellido) {
-        tableClientes.setItems(clientes.filtered(c ->
-            (categoria == null || categoria.isEmpty() || c.getCategoria().equals(categoria)) &&
-            (nombre == null || nombre.isEmpty() || c.getNombre().toLowerCase().contains(nombre.toLowerCase())) &&
-            (apellido == null || apellido.isEmpty() || c.getApellido().toLowerCase().contains(apellido.toLowerCase()))
-        ));
     }
 
     public void mostrarFormularioModal(Cliente cliente) {
-        System.out.println("DEBUG: abrir formulario modal");
-        VBox panelFormulario = formView.getView();
-
+        VBox panel = formView.getView();
         Stage dialog = new Stage();
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.setTitle(cliente == null ? "Nuevo Cliente" : "Editar Cliente");
-
-        if (cliente != null) {
-            // Precarga campos
-            formView.cmbCategoria.setValue(cliente.getCategoria());
-            formView.txtNombre.setText(cliente.getNombre());
-            formView.txtApellido.setText(cliente.getApellido());
-            formView.txtReferencia.setText(cliente.getReferencia());
-            formView.dpProximoContacto.setValue(cliente.getProximoContacto());
-            formView.txtDireccion.setText(cliente.getDireccion());
-            formView.txtLocalidad.setText(cliente.getLocalidad());
-            formView.dpCumpleaños.setValue(cliente.getCumpleaños());
-            formView.taDatosPersonales.setText(cliente.getDatosPersonales());
-            formView.taDatosLaborales.setText(cliente.getDatosLaborales());
-            formView.taDatosVenta.setText(cliente.getDatosVenta());
-            formView.taDatosCompra.setText(cliente.getDatosCompra());
-            formView.cbDeseaContacto.setSelected(cliente.isDeseaContacto());
-            formView.cbFueCliente.setSelected(cliente.isFueCliente());
-            formView.dpFechaCompraVenta.setValue(cliente.getFechaCompraVenta());
-            formView.cbEsReferidor.setSelected(cliente.isEsReferidor());
-            formView.txtRefirioA.setText(cliente.getRefirioA());
-            formView.txtReferidoPor.setText(cliente.getReferidoPor());
-            formView.cbEsPadre.setSelected(cliente.isEsPadre());
-            formView.cbEsMadre.setSelected(cliente.isEsMadre());
-            formView.txtHijos.setText(cliente.getNombreHijos());
-            formView.txtTelefono.setText(cliente.getTelefono());
-            formView.txtRedes.setText(cliente.getRedesSociales());
-            formView.txtEmail.setText(cliente.getEmail());
-            formView.cmbOcupacion.setValue(cliente.getOcupacion());
-            formView.txtGustosMusicales.setText(cliente.getGustosMusicales());
-            formView.txtClubFutbol.setText(cliente.getClubFutbol());
-            formView.txtBebidas.setText(cliente.getGustoBebidas());
-            formView.txtComida.setText(cliente.getPreferenciasComida());
-            formView.btnGuardar.setText("Actualizar");
-        } else {
-            formView.btnGuardar.setText("Guardar");
-            limpiarCampos();
-        }
-
-        formView.btnGuardar.setOnAction(e -> {
-            boolean ok = (cliente == null) ? guardarCliente() : actualizarCliente(cliente);
+        formView.precargar(cliente);
+        formView.getBtnGuardar().setOnAction(e -> {
+            boolean ok = formView.isNew() ? formView.guardar() : formView.actualizar();
             if (ok) {
-                Alert info = new Alert(Alert.AlertType.INFORMATION,
-                    cliente == null ? "Cliente creado." : "Cliente actualizado.");
-                info.showAndWait();
+                listarClientes();
                 dialog.close();
             }
         });
-
-        ScrollPane scroll = new ScrollPane(panelFormulario);
+        ScrollPane scroll = new ScrollPane(panel);
         scroll.setFitToWidth(true);
-
         dialog.setScene(new Scene(scroll, 450, 700));
         dialog.showAndWait();
     }
 
-    private boolean guardarCliente() {
-        Cliente c = buildClienteFromForm(0);
-        if (c == null) return false;
-        try {
-            ClienteDAO.agregarCliente(c);
-            listarClientes();
-            return true;
-        } catch (SQLException ex) {
-            ErrorHandler.showError("Error", ex.getMessage());
-            return false;
-        }
-    }
-
-    private boolean actualizarCliente(Cliente cliente) {
-        Cliente c = buildClienteFromForm(cliente.getId());
-        if (c == null) return false;
-        try {
-            ClienteDAO.modificarCliente(c);
-            listarClientes();
-            return true;
-        } catch (SQLException ex) {
-            ErrorHandler.showError("Error", ex.getMessage());
-            return false;
-        }
-    }
-
-    private Cliente buildClienteFromForm(int id) {
-        String categoria = formView.cmbCategoria.getValue();
-        String nombre = formView.txtNombre.getText();
-        String apellido = formView.txtApellido.getText();
-        if (categoria == null || nombre.isEmpty() || apellido.isEmpty()) {
-            ErrorHandler.showError("Error", "Categoría, Nombre y Apellido son obligatorios.");
-            return null;
-        }
-        Cliente c = new Cliente();
-        c.setId(id);
-        c.setCategoria(categoria);
-        c.setNombre(nombre);
-        c.setApellido(apellido);
-        c.setReferencia(formView.txtReferencia.getText());
-        c.setProximoContacto(formView.dpProximoContacto.getValue());
-        c.setDireccion(formView.txtDireccion.getText());
-        c.setLocalidad(formView.txtLocalidad.getText());
-        c.setCumpleaños(formView.dpCumpleaños.getValue());
-        c.setDatosPersonales(formView.taDatosPersonales.getText());
-        c.setDatosLaborales(formView.taDatosLaborales.getText());
-        c.setDatosVenta(formView.taDatosVenta.getText());
-        c.setDatosCompra(formView.taDatosCompra.getText());
-        c.setDeseaContacto(formView.cbDeseaContacto.isSelected());
-        c.setFueCliente(formView.cbFueCliente.isSelected());
-        c.setFechaCompraVenta(formView.dpFechaCompraVenta.getValue());
-        c.setEsReferidor(formView.cbEsReferidor.isSelected());
-        c.setRefirioA(formView.txtRefirioA.getText());
-        c.setReferidoPor(formView.txtReferidoPor.getText());
-        c.setEsPadre(formView.cbEsPadre.isSelected());
-        c.setEsMadre(formView.cbEsMadre.isSelected());
-        c.setNombreHijos(formView.txtHijos.getText());
-        c.setTelefono(formView.txtTelefono.getText());
-        c.setRedesSociales(formView.txtRedes.getText());
-        c.setEmail(formView.txtEmail.getText());
-        c.setOcupacion(formView.cmbOcupacion.getValue());
-        c.setGustosMusicales(formView.txtGustosMusicales.getText());
-        c.setClubFutbol(formView.txtClubFutbol.getText());
-        c.setGustoBebidas(formView.txtBebidas.getText());
-        c.setPreferenciasComida(formView.txtComida.getText());
-        return c;
-    }
-
-    public void limpiarCampos() {
-        formView.cmbCategoria.setValue(null);
-        formView.txtNombre.clear();
-        formView.txtApellido.clear();
-        formView.txtReferencia.clear();
-        formView.dpProximoContacto.setValue(null);
-        formView.txtDireccion.clear();
-        formView.txtLocalidad.clear();
-        formView.dpCumpleaños.setValue(null);
-        formView.taDatosPersonales.clear();
-        formView.taDatosLaborales.clear();
-        formView.taDatosVenta.clear();
-        formView.taDatosCompra.clear();
-        formView.cbDeseaContacto.setSelected(false);
-        formView.cbFueCliente.setSelected(false);
-        formView.dpFechaCompraVenta.setValue(null);
-        formView.cbEsReferidor.setSelected(false);
-        formView.txtRefirioA.clear();
-        formView.txtReferidoPor.clear();
-        formView.cbEsPadre.setSelected(false);
-        formView.cbEsMadre.setSelected(false);
-        formView.txtHijos.clear();
-        formView.txtTelefono.clear();
-        formView.txtRedes.clear();
-        formView.txtEmail.clear();
-        formView.cmbOcupacion.setValue(null);
-        formView.txtGustosMusicales.clear();
-        formView.txtClubFutbol.clear();
-        formView.txtBebidas.clear();
-        formView.txtComida.clear();
-    }
-
-    private void eliminarConfirmacion(Cliente cliente) {
-        Alert a = new Alert(Alert.AlertType.CONFIRMATION,
-            "¿Eliminar " + cliente.getNombre() + " " + cliente.getApellido() + "?",
-            ButtonType.OK, ButtonType.CANCEL);
-        a.showAndWait().ifPresent(b -> {
-            if (b == ButtonType.OK) {
-                try {
-                    ClienteDAO.eliminarCliente(cliente.getId());
-                    listarClientes();
-                } catch (SQLException ex) {
-                    ErrorHandler.showError("Error", ex.getMessage());
-                }
-            }
-        });
-    }
-
-    private void mostrarDetalle(Cliente cliente) {
+    public void mostrarDetalle(Cliente cliente) {
         Stage s = new Stage();
         s.initModality(Modality.APPLICATION_MODAL);
         s.setTitle("Detalle Cliente");
@@ -352,8 +300,35 @@ public class ClienteController {
 
         ScrollPane scroll = new ScrollPane(v);
         scroll.setFitToWidth(true);
-        Scene sc = new Scene(scroll, 400, 600);
-        s.setScene(sc);
+        s.setScene(new Scene(scroll, 400, 600));
         s.showAndWait();
+    }
+
+    /**
+     * Confirma con el usuario y elimina el cliente de la base de datos.
+     */
+    public void eliminarConfirmacion(Cliente cliente) {
+        Alert a = new Alert(Alert.AlertType.CONFIRMATION,
+            "¿Eliminar " + cliente.getNombre() + " " + cliente.getApellido() + "?",
+            ButtonType.OK, ButtonType.CANCEL);
+        a.showAndWait().ifPresent(b -> {
+            if (b == ButtonType.OK) {
+                try {
+                    ClienteDAO.eliminarCliente(cliente.getId());
+                    listarClientes();
+                } catch (SQLException ex) {
+                    ErrorHandler.showError("Error", ex.getMessage());
+                }
+            }
+        });
+    }
+
+    
+    public Button getBtnExportarCsv() {
+        return btnExportarCsv;
+    }
+
+    public Button getBtnImportarCsv() {
+        return btnImportarCsv;
     }
 }
