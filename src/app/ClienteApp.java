@@ -15,7 +15,6 @@ public class ClienteApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        // Prepara la base de datos y recordatorios
         TestSQLite.createTable();
         TestSQLite.verificarYAgregarColumnas();
         try {
@@ -24,7 +23,6 @@ public class ClienteApp extends Application {
             e.printStackTrace();
         }
 
-        // El controlador crea y muestra toda la interfaz
         new ClienteController(primaryStage, clientes);
     }
 
