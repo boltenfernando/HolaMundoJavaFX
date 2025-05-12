@@ -8,34 +8,24 @@ import javafx.scene.layout.VBox;
 public class FormularioClienteView {
 
     private final VBox root;
-    private final Button btnExportarCsv;
-    private final Button btnImportarCsv;
     private final Button btnGuardar;
 
     public FormularioClienteView() {
         root = new VBox(10);
         root.setPadding(new Insets(10));
 
-        btnExportarCsv = new Button("Exportar CSV");
-        btnImportarCsv = new Button("Importar CSV");
+        // Botón de guardado
         btnGuardar = new Button("Guardar");
 
-        HBox filaBotones = new HBox(10, btnExportarCsv, btnImportarCsv);
+        // Fila de botones
+        HBox filaBotones = new HBox(10, btnGuardar);
         filaBotones.setPadding(new Insets(10));
 
-        root.getChildren().addAll(filaBotones); // Podés sumar más nodos después si querés
+        root.getChildren().addAll(filaBotones);
     }
 
     public VBox getView() {
         return root;
-    }
-
-    public Button getBtnExportarCsv() {
-        return btnExportarCsv;
-    }
-
-    public Button getBtnImportarCsv() {
-        return btnImportarCsv;
     }
 
     public Button getBtnGuardar() {

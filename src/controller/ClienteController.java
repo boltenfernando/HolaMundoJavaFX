@@ -1,15 +1,13 @@
 package controller;
 
 import dao.ClienteDAO;
-import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
-import javafx.stage.FileChooser;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.Cliente;
 import service.RecordatorioService;
@@ -17,10 +15,7 @@ import util.ErrorHandler;
 import util.LoggerUtil;
 import view.FormularioClienteView;
 
-import java.io.*;
 import java.sql.SQLException;
-import java.time.LocalDate;
-import java.util.List;
 import java.util.logging.Logger;
 
 public class ClienteController {
@@ -29,8 +24,6 @@ public class ClienteController {
     private VBox panelRecordatorios;
     private final FormularioClienteView formView;
     private final Stage primaryStage;
-    private final Button btnExportarCsv;
-    private final Button btnImportarCsv;
 
     private static final Logger logger = LoggerUtil.getLogger();
 
@@ -39,20 +32,15 @@ public class ClienteController {
         this.clientes = clientes;
 
         formView = new FormularioClienteView();
-        btnExportarCsv = new Button("Exportar CSV");
-        btnImportarCsv = new Button("Importar CSV");
 
         configurarTabla();
         configurarRecordatorios();
-        configurarEventosCsv();
-
-        VBox toolbar = crearToolbar();
 
         BorderPane root = new BorderPane();
-        root.setTop(toolbar);
+        root.setPadding(new Insets(10));
+        root.setTop(crearToolbar());
         root.setCenter(tableClientes);
         root.setRight(panelRecordatorios);
-        root.setPadding(new Insets(10));
         BorderPane.setMargin(tableClientes, new Insets(0, 10, 0, 0));
 
         primaryStage.setScene(new Scene(root, 1200, 700));
@@ -72,7 +60,6 @@ public class ClienteController {
         colApe.setCellValueFactory(new PropertyValueFactory<>("apellido"));
         TableColumn<Cliente, String> colRef = new TableColumn<>("Referencia");
         colRef.setCellValueFactory(new PropertyValueFactory<>("referencia"));
-
         tableClientes.getColumns().addAll(colCat, colNom, colApe, colRef);
     }
 
@@ -83,20 +70,35 @@ public class ClienteController {
         ChoiceBox<String> cbCategoria = new ChoiceBox<>();
         cbCategoria.getItems().addAll("", "A+", "A", "B", "C", "D");
         cbCategoria.setValue("");
-        TextField tfNombre = new TextField(); tfNombre.setPromptText("Nombre");
-        TextField tfApellido = new TextField(); tfApellido.setPromptText("Apellido");
+        TextField tfNombre = new TextField();
+        tfNombre.setPromptText("Nombre");
+        TextField tfApellido = new TextField();
+        tfApellido.setPromptText("Apellido");
 
         Button btnFiltrar = new Button("Filtrar");
         btnFiltrar.setOnAction(e -> aplicarFiltros(cbCategoria.getValue(), tfNombre.getText(), tfApellido.getText()));
         Button btnLimpiar = new Button("Limpiar Filtro");
         btnLimpiar.setOnAction(e -> {
-            cbCategoria.setValue(""); tfNombre.clear(); tfApellido.clear(); listarClientes();
+            cbCategoria.setValue("");
+            tfNombre.clear();
+            tfApellido.clear();
+            listarClientes();
         });
 
-        HBox fila1 = new HBox(10, btnNuevo, btnExportarCsv, btnImportarCsv);
-        HBox fila2 = new HBox(5, new Label("Categoría:"), cbCategoria, new Label("Nombre:"), tfNombre, new Label("Apellido:"), tfApellido, btnFiltrar, btnLimpiar);
-        VBox toolbar = new VBox(5, fila1, fila2);
-        toolbar.setPadding(new Insets(10));
+        HBox fila = new HBox(10,
+            btnNuevo,
+            new Separator(Orientation.VERTICAL),
+            new Label("Categoría:"), cbCategoria,
+            new Label("Nombre:"), tfNombre,
+            new Label("Apellido:"), tfApellido,
+            btnFiltrar,
+            btnLimpiar
+        );
+        fila.setPadding(new Insets(10));
+        fila.setSpacing(5);
+
+        VBox toolbar = new VBox(fila);
+        toolbar.setPadding(new Insets(0, 10, 0, 10));
         return toolbar;
     }
 
@@ -120,8 +122,7 @@ public class ClienteController {
 
     public void eliminarConfirmacion(Cliente cliente) {
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
-            "¿Eliminar " + cliente.getNombre() + " " + cliente.getApellido() + "?",
-            ButtonType.OK, ButtonType.CANCEL);
+            "¿Eliminar " + cliente.getNombre() + " " + cliente.getApellido() + "?", ButtonType.OK, ButtonType.CANCEL);
         a.showAndWait().ifPresent(b -> {
             if (b == ButtonType.OK) {
                 try {
@@ -138,7 +139,7 @@ public class ClienteController {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.initOwner(primaryStage);
         dialog.setTitle(cliente == null ? "Nuevo Cliente" : "Editar Cliente");
-        dialog.getDialogPane().setContent(new Label("Aquí iría el formulario para: " + (cliente != null ? cliente.getNombre() : "nuevo")));
+        dialog.getDialogPane().setContent(formView.getView());
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
         dialog.showAndWait();
     }
@@ -149,62 +150,4 @@ public class ClienteController {
         lupa.setOnAction(e -> RecordatorioService.mostrarRecordatorios());
         panelRecordatorios.getChildren().add(lupa);
     }
-
-    private void configurarEventosCsv() {
-        btnExportarCsv.setOnAction(e -> {
-            FileChooser chooser = new FileChooser();
-            chooser.setTitle("Guardar CSV de Clientes");
-            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
-            chooser.setInitialFileName("clientes.csv");
-            File file = chooser.showSaveDialog(primaryStage);
-            if (file != null) exportarCsv(file);
-        });
-
-        btnImportarCsv.setOnAction(e -> {
-            FileChooser chooser = new FileChooser();
-            chooser.setTitle("Seleccionar CSV de Clientes");
-            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
-            File file = chooser.showOpenDialog(primaryStage);
-            if (file != null) {
-                importarCsv(file);
-                listarClientes();
-            }
-        });
-    }
-
-    private void exportarCsv(File file) {
-        try {
-            List<Cliente> lista = ClienteDAO.listarClientes();
-            try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
-                pw.println("id,nombre,apellido,referencia");
-                for (Cliente c : lista) {
-                    pw.printf("%d,%s,%s,%s%n",
-                        c.getId(), c.getNombre(), c.getApellido(), c.getReferencia());
-                }
-            }
-        } catch (Exception ex) {
-            ErrorHandler.showError("Error exportando CSV", ex.getMessage());
-        }
-    }
-
-    private void importarCsv(File file) {
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            br.readLine();
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] cols = line.split(",", -1);
-                Cliente c = new Cliente();
-                if (!cols[0].isEmpty()) c.setId(Integer.parseInt(cols[0]));
-                c.setNombre(cols[1]);
-                c.setApellido(cols[2]);
-                c.setReferencia(cols[3]);
-                ClienteDAO.guardarOActualizar(c);
-            }
-        } catch (Exception ex) {
-            ErrorHandler.showError("Error importando CSV", ex.getMessage());
-        }
-    }
-
-    public Button getBtnExportarCsv() { return btnExportarCsv; }
-    public Button getBtnImportarCsv() { return btnImportarCsv; }
 }
