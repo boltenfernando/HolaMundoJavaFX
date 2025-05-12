@@ -14,14 +14,12 @@ public class FormularioClienteView {
         root = new VBox(10);
         root.setPadding(new Insets(10));
 
-        // Botón de guardado
         btnGuardar = new Button("Guardar");
 
-        // Fila de botones
         HBox filaBotones = new HBox(10, btnGuardar);
         filaBotones.setPadding(new Insets(10));
 
-        root.getChildren().addAll(filaBotones);
+        root.getChildren().add(filaBotones);
     }
 
     public VBox getView() {
@@ -43,12 +41,10 @@ public class FormularioClienteView {
     }
 
     public void precargar(model.Cliente cliente) {
-        // Aquí cargás los datos del cliente si viene uno
         System.out.println("Precargando cliente...");
     }
 
     public boolean isNew() {
-        // Lógica temporal de ejemplo
         return true;
     }
 }

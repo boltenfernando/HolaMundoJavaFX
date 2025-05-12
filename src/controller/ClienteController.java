@@ -63,6 +63,13 @@ public class ClienteController {
         tableClientes.getColumns().addAll(colCat, colNom, colApe, colRef);
     }
 
+    private void configurarRecordatorios() {
+        panelRecordatorios = RecordatorioService.crearPanelRecordatoriosPequeno();
+        Button lupa = new Button("🔍");
+        lupa.setOnAction(e -> RecordatorioService.mostrarRecordatorios());
+        panelRecordatorios.getChildren().add(lupa);
+    }
+
     private VBox crearToolbar() {
         Button btnNuevo = new Button("Nuevo Cliente");
         btnNuevo.setOnAction(e -> mostrarFormularioModal(null));
@@ -97,9 +104,7 @@ public class ClienteController {
         fila.setPadding(new Insets(10));
         fila.setSpacing(5);
 
-        VBox toolbar = new VBox(fila);
-        toolbar.setPadding(new Insets(0, 10, 0, 10));
-        return toolbar;
+        return new VBox(fila);
     }
 
     public void listarClientes() {
@@ -142,12 +147,5 @@ public class ClienteController {
         dialog.getDialogPane().setContent(formView.getView());
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
         dialog.showAndWait();
-    }
-
-    private void configurarRecordatorios() {
-        panelRecordatorios = RecordatorioService.crearPanelRecordatoriosPequeno();
-        Button lupa = new Button("🔍");
-        lupa.setOnAction(e -> RecordatorioService.mostrarRecordatorios());
-        panelRecordatorios.getChildren().add(lupa);
     }
 }
